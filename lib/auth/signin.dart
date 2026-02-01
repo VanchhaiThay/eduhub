@@ -2,6 +2,8 @@ import 'package:eduhub/auth/signup.dart';
 import 'package:eduhub/components/home.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -13,21 +15,51 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool isLoading = false;
+
   Future<void> login() async {
+    if (isLoading) return;
+
+    setState(() => isLoading = true);
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Login user
+      UserCredential credential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
+      // Get user data from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(credential.user!.uid)
+          .get();
+
+      if (!doc.exists) {
+        throw Exception("User data not found");
+      }
+
+      String role = doc['role'];
+
+      // Navigate based on role (example)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(
+          builder: (_) => const HomePage(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Login failed")),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Login failed")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     }
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -48,11 +80,20 @@ class _LoginPageState extends State<LoginPage> {
               decoration: const InputDecoration(labelText: "Password"),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: login, child: const Text("Login")),
+
+            ElevatedButton(
+              onPressed: isLoading ? null : login,
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text("Login"),
+            ),
+
             TextButton(
               onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => SignUpPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignUpPage()),
+                );
               },
               child: const Text("Create account"),
             )
