@@ -1,7 +1,13 @@
+import 'package:eduhub/components/tabs/home_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../auth/signin.dart';
+import 'tabs/course_tab.dart';
+import 'tabs/class_tab.dart';
+import 'tabs/assignment_tab.dart';
+import 'tabs/profile_tab.dart';
+import 'utils/user_data.dart';
+import 'utils/localization.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   String? firstName;
   String? lastName;
   String? email;
+  String selectedLanguage = "English"; // Default
   bool isLoading = true;
 
   @override
@@ -24,35 +31,27 @@ class _HomePageState extends State<HomePage> {
     _loadUserData();
   }
 
-  // Load user data from Firestore
   Future<void> _loadUserData() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final doc = await FirebaseFirestore.instance
-          .collection("users")
-          .doc(uid)
-          .get();
-
-      if (doc.exists) {
-        setState(() {
-          role = doc['role']; // student or teacher
-          firstName = doc['firstName'];
-          lastName = doc['lastName'];
-          email = doc['email'];
-          isLoading = false;
-        });
-      } else {
-        throw Exception("User data not found");
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error loading user: $e")));
+    final userData = await UserData.loadUser();
+    if (userData != null) {
+      setState(() {
+        role = userData.role;
+        firstName = userData.firstName;
+        lastName = userData.lastName;
+        email = userData.email;
+        selectedLanguage = userData.language ?? "English";
+        isLoading = false;
+      });
+    } else {
       setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error loading user data")),
+      );
     }
   }
 
-  // Logout
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
@@ -62,88 +61,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Bottom nav tap
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  // Tabs based on role
-  List<Widget> _buildTabs() {
-    if (role == 'teacher') {
-      return [
-        const Center(child: Text("Home Screen (Teacher)")), // Home
-        _buildCourseTab(), // Course
-        const Center(child: Text("My Classes")), // Class
-        const Center(child: Text("Assignments to Grade")), // Assignment
-        _buildProfileTab(), // Profile
-      ];
-    } else {
-      // Student
-      return [
-        const Center(child: Text("Home Screen (Student)")), // Home
-        _buildCourseTab(), // Course
-        const Center(child: Text("Enrolled Classes")), // Class
-        const Center(child: Text("My Assignments")), // Assignment
-        _buildProfileTab(), // Profile
-      ];
-    }
-  }
-
-  // Profile tab
-  Widget _buildProfileTab() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("First Name: $firstName", style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 10),
-          Text("Last Name: $lastName", style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 10),
-          Text("Email: $email", style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 10),
-          Text("Role: $role", style: const TextStyle(fontSize: 18)),
-        ],
-      ),
-    );
-  }
-
-  // Course tab
-  Widget _buildCourseTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Hello from course"),
-        ],
-      ),
-    );
-  }
-
-  // Bottom nav items
-  List<BottomNavigationBarItem> _buildBottomNavItems() {
-    return const [
-      BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-      BottomNavigationBarItem(icon: Icon(Icons.school), label: "Course"),
-      BottomNavigationBarItem(icon: Icon(Icons.book), label: "Class"),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.assignment),
-        label: "Assignments",
-      ),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
-    final tabs = _buildTabs();
-    final navItems = _buildBottomNavItems();
+    // Build tabs dynamically based on role
+    final tabs = [
+      HomeTab(role: role!, selectedLanguage: selectedLanguage),
+      CourseTab(selectedLanguage: selectedLanguage),
+      ClassTab(role: role!, selectedLanguage: selectedLanguage),
+      AssignmentTab(role: role!, selectedLanguage: selectedLanguage),
+      ProfileTab(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        role: role,
+        selectedLanguage: selectedLanguage,
+        onLanguageChanged: (lang) {
+          setState(() => selectedLanguage = lang);
+        },
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -159,8 +101,29 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
-        items: navItems,
         onTap: _onItemTapped,
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home),
+            label: Localization.text(selectedLanguage, 'home'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.school),
+            label: Localization.text(selectedLanguage, 'course'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.book),
+            label: Localization.text(selectedLanguage, 'class'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.assignment),
+            label: Localization.text(selectedLanguage, 'assignments'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: Localization.text(selectedLanguage, 'profile'),
+          ),
+        ],
       ),
     );
   }

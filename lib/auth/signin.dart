@@ -40,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception("User data not found");
       }
 
+      // ignore: unused_local_variable
       String role = doc['role'];
 
       // Navigate based on role (example)
