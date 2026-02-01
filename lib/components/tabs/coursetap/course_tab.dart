@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/localization.dart';
+import '../../utils/localization.dart';
 
 class CourseTab extends StatelessWidget {
   final String selectedLanguage;

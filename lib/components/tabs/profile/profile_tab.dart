@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/user_data.dart';
-import '../utils/localization.dart';
+import '../../utils/user_data.dart';
+import '../../utils/localization.dart';
 
 class ProfileTab extends StatelessWidget {
   final String? firstName;

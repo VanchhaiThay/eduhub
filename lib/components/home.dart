@@ -1,11 +1,14 @@
-import 'package:eduhub/components/tabs/home_tap.dart';
+import 'package:eduhub/components/tabs/assignmentstap/assignment_student_tab.dart';
+import 'package:eduhub/components/tabs/classtap/class_student_tab.dart';
+import 'package:eduhub/components/tabs/hometap/home_student_tap.dart';
+import 'package:eduhub/components/tabs/hometap/home_teacher_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/signin.dart';
-import 'tabs/course_tab.dart';
-import 'tabs/class_tab.dart';
-import 'tabs/assignment_tab.dart';
-import 'tabs/profile_tab.dart';
+import 'tabs/coursetap/course_tab.dart';
+import 'tabs/classtap/class_teacher_tab.dart';
+import 'tabs/assignmentstap/assignment_teacher_tab.dart';
+import 'tabs/profile/profile_tab.dart';
 import 'utils/user_data.dart';
 import 'utils/localization.dart';
 
@@ -70,22 +73,33 @@ class _HomePageState extends State<HomePage> {
     }
 
     // Build tabs dynamically based on role
-    final tabs = [
-      HomeTab(role: role!, selectedLanguage: selectedLanguage),
-      CourseTab(selectedLanguage: selectedLanguage),
-      ClassTab(role: role!, selectedLanguage: selectedLanguage),
-      AssignmentTab(role: role!, selectedLanguage: selectedLanguage),
-      ProfileTab(
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        role: role,
-        selectedLanguage: selectedLanguage,
-        onLanguageChanged: (lang) {
-          setState(() => selectedLanguage = lang);
-        },
-      ),
-    ];
+final tabs = [
+  role == 'teacher'
+      ? HomeTeacherTab(language: selectedLanguage)
+      : HomeStudentTab(language: selectedLanguage),
+
+  CourseTab(selectedLanguage: selectedLanguage),
+
+  role == 'teacher'
+      ? ClassTeacherTab(language: selectedLanguage)
+      : ClassStudentTab(language: selectedLanguage),
+
+  role == 'teacher'
+      ? AssignmentTeacherTab(language: selectedLanguage)
+      : AssignmentStudentTab(language: selectedLanguage),
+
+  ProfileTab(
+    firstName: firstName,
+    lastName: lastName,
+    email: email,
+    role: role,
+    selectedLanguage: selectedLanguage,
+    onLanguageChanged: (lang) {
+      setState(() => selectedLanguage = lang);
+    },
+  ),
+];
+
 
     return Scaffold(
       appBar: AppBar(
