@@ -47,9 +47,9 @@ class _HomePageState extends State<HomePage> {
       });
     } else {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error loading user data")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
   }
 
@@ -67,47 +67,88 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // Build tabs dynamically based on role
-final tabs = [
-  role == 'teacher'
-      ? HomeTeacherTab(language: selectedLanguage)
-      : HomeStudentTab(language: selectedLanguage),
+    final tabs = [
+      role == 'teacher'
+          ? HomeTeacherTab(language: selectedLanguage)
+          : HomeStudentTab(language: selectedLanguage),
 
-  CourseTab(selectedLanguage: selectedLanguage),
+      CourseTab(selectedLanguage: selectedLanguage),
 
-  role == 'teacher'
-      ? ClassTeacherTab(language: selectedLanguage)
-      : ClassStudentTab(language: selectedLanguage),
+      role == 'teacher'
+          ? ClassTeacherTab(language: selectedLanguage)
+          : ClassStudentTab(language: selectedLanguage),
 
-  role == 'teacher'
-      ? AssignmentTeacherTab(language: selectedLanguage)
-      : AssignmentStudentTab(language: selectedLanguage),
+      role == 'teacher'
+          ? AssignmentTeacherTab(language: selectedLanguage)
+          : AssignmentStudentTab(language: selectedLanguage),
 
-  ProfileTab(
-    firstName: firstName,
-    lastName: lastName,
-    email: email,
-    role: role,
-    selectedLanguage: selectedLanguage,
-    onLanguageChanged: (lang) {
-      setState(() => selectedLanguage = lang);
-    },
-  ),
-];
-
+      ProfileTab(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        role: role,
+        selectedLanguage: selectedLanguage,
+        onLanguageChanged: (lang) {
+          setState(() => selectedLanguage = lang);
+        },
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("EduHub"),
+        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFF38A39D),
+        title: Row(
+          children: [
+            // Circle profile image
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: AssetImage("assets/images/profile.png"), // Default profile image
+              // If you have a real user image URL, use NetworkImage(url)
+            ),
+            const SizedBox(width: 10),
+            // User name and role stacked vertically
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "${firstName ?? ""} ${lastName ?? ""}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    role != null ? role!.toUpperCase() : "",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout),
+            onPressed: () {
+              // TODO: Handle notifications
+            },
+            icon: const Icon(Icons.notifications, color: Colors.white),
           ),
         ],
       ),
