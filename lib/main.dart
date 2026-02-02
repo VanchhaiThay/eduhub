@@ -1,3 +1,4 @@
+import 'package:eduhub/welcome/welcome.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,27 +19,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const LandingPage(),
+      home: WelcomePage(), // show splash first
     );
   }
 }
 
-// This widget decides which page to show
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Get current user
     final user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
-      // User is logged in
       return const HomePage();
     } else {
-      // User is not logged in
       return const LoginPage();
     }
   }
