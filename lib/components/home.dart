@@ -1,19 +1,20 @@
-import 'package:eduhub/components/tabs/assignmentstap/assignment_student_tab.dart';
-import 'package:eduhub/components/tabs/classtap/class_student_tab.dart';
 import 'package:eduhub/components/tabs/hometap/home_student_tap.dart';
-import 'package:eduhub/components/tabs/hometap/home_teacher_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/signin.dart';
 import 'tabs/coursetap/course_tab.dart';
 import 'tabs/classtap/class_teacher_tab.dart';
+import 'tabs/classtap/class_student_tab.dart';
 import 'tabs/assignmentstap/assignment_teacher_tab.dart';
+import 'tabs/assignmentstap/assignment_student_tab.dart';
+import 'tabs/hometap/home_teacher_tab.dart';
 import 'tabs/profile/profile_tab.dart';
 import 'utils/user_data.dart';
 import 'utils/localization.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int initialNotification;
+  const HomePage({super.key, this.initialNotification = 0});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -21,6 +22,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  int notificationCount = 0;
+
   String? role;
   String? firstName;
   String? lastName;
@@ -31,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    notificationCount = widget.initialNotification;
     _loadUserData();
   }
 
@@ -64,10 +68,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _onNotificationPressed() {
+    setState(() {
+      notificationCount = 0;
+    });
+    // TODO: Navigate to notifications page
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     // Build tabs dynamically based on role
@@ -75,17 +88,13 @@ class _HomePageState extends State<HomePage> {
       role == 'teacher'
           ? HomeTeacherTab(language: selectedLanguage)
           : HomeStudentTab(language: selectedLanguage),
-
       CourseTab(selectedLanguage: selectedLanguage),
-
       role == 'teacher'
           ? ClassTeacherTab(language: selectedLanguage)
           : ClassStudentTab(language: selectedLanguage),
-
       role == 'teacher'
           ? AssignmentTeacherTab(language: selectedLanguage)
           : AssignmentStudentTab(language: selectedLanguage),
-
       ProfileTab(
         firstName: firstName,
         lastName: lastName,
@@ -104,14 +113,11 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFF38A39D),
         title: Row(
           children: [
-            // Circle profile image
             CircleAvatar(
               radius: 20,
-              backgroundImage: AssetImage("assets/images/profile.png"), // Default profile image
-              // If you have a real user image URL, use NetworkImage(url)
+              // backgroundImage: const AssetImage("assets/images/profile.png"),
             ),
             const SizedBox(width: 10),
-            // User name and role stacked vertically
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -125,7 +131,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(10),
@@ -133,10 +140,9 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     role != null ? role!.toUpperCase() : "",
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -144,11 +150,38 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
+          Stack(
+            children: [
+              IconButton(
+                onPressed: _onNotificationPressed,
+                icon: const Icon(Icons.notifications, color: Colors.white),
+              ),
+              if (notificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10)),
+                    constraints:
+                        const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: const Text(
+                      '+',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
-            onPressed: () {
-              // TODO: Handle notifications
-            },
-            icon: const Icon(Icons.notifications, color: Colors.white),
+            onPressed: () => _logout(context),
+            icon: const Icon(Icons.logout, color: Colors.white),
           ),
         ],
       ),

@@ -1,8 +1,9 @@
-import 'package:eduhub/auth/signup.dart';
-import 'package:eduhub/components/home.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../components/home.dart';
+import '../main.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,10 +20,10 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> login() async {
     if (isLoading) return;
-
     setState(() => isLoading = true);
 
     try {
+      // Firebase login
       UserCredential credential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
@@ -30,21 +31,33 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       final doc = await FirebaseFirestore.instance
-          .collection("users")
+          .collection('users')
           .doc(credential.user!.uid)
           .get();
 
-      if (!doc.exists) {
-        throw Exception("User data not found");
-      }
+      if (!doc.exists) throw Exception("User data not found");
 
-      String role = doc['role'];
+      // Send local notification
+      await flutterLocalNotificationsPlugin.show(
+        id: 0,
+        title: 'Login Successful',
+        body: 'Welcome back, ${doc['firstName']}!',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'login_channel',
+            'Login Notifications',
+            channelDescription: 'Notifications for login events',
+            importance: Importance.max,
+            priority: Priority.high,
+            ticker: 'ticker',
+          ),
+        ),
+      );
 
+      // Navigate to HomePage with initial notification
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        ),
+        MaterialPageRoute(builder: (_) => const HomePage(initialNotification: 1)),
       );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,37 +81,29 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  "assets/images/login.png",
-                  width: 200,
-                ),
+                Image.asset("assets/images/login.png", width: 200),
                 const SizedBox(height: 30),
-
-                // Email Field
                 TextField(
                   controller: emailController,
+                  enabled: !isLoading,
                   decoration: InputDecoration(
                     labelText: "Email",
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 15),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   ),
                   style: const TextStyle(color: Colors.white),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 15),
-
-                // Password Field
                 TextField(
                   controller: passwordController,
+                  enabled: !isLoading,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: "Password",
@@ -106,17 +111,13 @@ class _LoginPageState extends State<LoginPage> {
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 15),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   ),
                   style: const TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 25),
-
-                // Login Button
                 SizedBox(
                   width: 200,
                   height: 50,
@@ -125,45 +126,15 @@ class _LoginPageState extends State<LoginPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF38A39D),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 5,
-                      shadowColor: Colors.black45,
-                      textStyle: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     child: isLoading
                         ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Color(0xFF38A39D)),
-                          )
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38A39D)))
                         : const Text("Login"),
                   ),
                 ),
-                const SizedBox(height: 15),
-                // Sign Up Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Don't have an account?"),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const SignUpPage()),
-                        );
-                      },
-                      child: const Text(
-                        "Sign up",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  ],
-                )
               ],
             ),
           ),
