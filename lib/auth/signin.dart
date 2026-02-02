@@ -56,14 +56,17 @@ class _LoginPageState extends State<LoginPage> {
 
       // Navigate to HomePage with initial notification
       Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (_) => const HomePage(initialNotification: 1)),
       );
     } on FirebaseAuthException catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Login failed")),
       );
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -91,6 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                     labelText: "Email",
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
+                    // ignore: deprecated_member_use
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -109,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                     labelText: "Password",
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
+                    // ignore: deprecated_member_use
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),

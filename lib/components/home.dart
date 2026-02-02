@@ -29,8 +29,10 @@ class _HomePageState extends State<HomePage> {
   String? firstName;
   String? lastName;
   String? email;
-  String selectedLanguage = "English"; // Default
+  String selectedLanguage = "English";
   bool isLoading = true;
+
+  List<Map<String, dynamic>> notifications = [];
 
   @override
   void initState() {
@@ -38,7 +40,6 @@ class _HomePageState extends State<HomePage> {
     _loadUserDataAndNotifications();
   }
 
-  /// Load user data and notification count
   Future<void> _loadUserDataAndNotifications() async {
     final userData = await UserData.loadUser();
     final user = FirebaseAuth.instance.currentUser;
@@ -55,31 +56,28 @@ class _HomePageState extends State<HomePage> {
       final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       final doc = await userRef.get();
 
-      int currentCount = 0;
       if (doc.exists) {
-        currentCount = (doc.data()?['notificationCount'] ?? 0) as int;
-        setState(() => notificationCount = currentCount);
+        final data = doc.data()!;
+        notificationCount = (data['notificationCount'] ?? 0) as int;
+        notifications = List<Map<String, dynamic>>.from(data['notifications'] ?? []);
       }
 
-      // Increment notification only if not incremented yet
-      if (currentCount == 0) {
+      // Increment login notification only if first login
+      if (notificationCount == 0) {
         await _incrementLoginNotification(user.uid);
       }
 
       setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error loading user data")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
   }
 
-  /// Increment notification on login
   Future<void> _incrementLoginNotification(String uid) async {
     final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
 
-    // Transaction ensures safety in multi-device scenarios
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       final snapshot = await transaction.get(userRef);
       final currentCount = snapshot.data()?['notificationCount'] ?? 0;
@@ -87,18 +85,21 @@ class _HomePageState extends State<HomePage> {
       setState(() => notificationCount = currentCount + 1);
     });
 
-    // Store notification details
+    final newNotification = {
+      'title': 'Welcome Back!',
+      'body': 'You logged in successfully',
+      'timestamp': Timestamp.now(),
+    };
+
     await userRef.update({
-      'notifications': FieldValue.arrayUnion([
-        {
-          'title': 'Welcome Back!',
-          'body': 'You logged in successfully',
-          'timestamp': Timestamp.now(),
-        }
-      ])
+      'notifications': FieldValue.arrayUnion([newNotification])
     });
 
-    // Show local notification
+    setState(() {
+      notifications.insert(0, newNotification);
+    });
+
+    // Show local system notification
     const androidDetails = AndroidNotificationDetails(
       'login_channel',
       'Login Notifications',
@@ -110,7 +111,13 @@ class _HomePageState extends State<HomePage> {
 
     const notificationDetails = NotificationDetails(android: androidDetails);
 
-await flutterLocalNotificationsPlugin.show( id:DateTime.now().millisecondsSinceEpoch ~/ 1000, title: 'Welcome Back!', body: 'Hello, you logged in successfully!', notificationDetails: notificationDetails, payload: 'login_notification', );
+    await flutterLocalNotificationsPlugin.show(
+      id:DateTime.now().millisecondsSinceEpoch ~/ 1000, // id
+      title:'Welcome Back!', // title
+      body:'Hello, you logged in successfully!', // body
+      notificationDetails: notificationDetails, // details
+      payload: 'login_notification', // payload
+    );
   }
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
@@ -124,16 +131,52 @@ await flutterLocalNotificationsPlugin.show( id:DateTime.now().millisecondsSinceE
     );
   }
 
-  /// Clear notifications when tapping the bell
-  void _onNotificationPressed() async {
+  void _showNotifications() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
     setState(() => notificationCount = 0);
+
     await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .update({'notificationCount': 0});
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SizedBox(
+        height: 400,
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            const Text(
+              "Notifications",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            Expanded(
+              child: notifications.isEmpty
+                  ? const Center(child: Text("No notifications"))
+                  : ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notif = notifications[index];
+                        final ts = notif['timestamp'] as Timestamp?;
+                        final dateStr = ts != null
+                            ? "${ts.toDate().hour}:${ts.toDate().minute}, ${ts.toDate().day}/${ts.toDate().month}/${ts.toDate().year}"
+                            : "";
+                        return ListTile(
+                          title: Text(notif['title'] ?? ""),
+                          subtitle: Text(notif['body'] ?? ""),
+                          trailing: Text(dateStr, style: const TextStyle(fontSize: 10)),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -200,7 +243,7 @@ await flutterLocalNotificationsPlugin.show( id:DateTime.now().millisecondsSinceE
           Stack(
             children: [
               IconButton(
-                onPressed: _onNotificationPressed,
+                onPressed: _showNotifications,
                 icon: const Icon(Icons.notifications, color: Colors.white),
               ),
               if (notificationCount > 0)
@@ -223,10 +266,6 @@ await flutterLocalNotificationsPlugin.show( id:DateTime.now().millisecondsSinceE
                   ),
                 ),
             ],
-          ),
-          IconButton(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout, color: Colors.white),
           ),
         ],
       ),

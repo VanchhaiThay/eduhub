@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
-import 'auth/signin.dart';
-import 'components/home.dart';
 import 'welcome/welcome.dart';
 
 // Local notifications plugin
@@ -29,6 +26,7 @@ Future<void> main() async {
   await flutterLocalNotificationsPlugin.initialize(
     settings: initSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) {
+      // ignore: avoid_print
       print('Notification tapped: ${response.payload}');
     },
   );

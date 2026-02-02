@@ -53,16 +53,20 @@ class _SignUpPageState extends State<SignUpPage> {
           });
 
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(const SnackBar(content: Text("Signup success")));
 
+      // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text(e.message ?? "Signup failed")));
     } catch (e) {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
@@ -116,6 +120,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           labelText: "First Name",
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
+                          // ignore: deprecated_member_use
                           fillColor: Colors.white.withOpacity(0.2),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -137,6 +142,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           labelText: "Last Name",
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
+                          // ignore: deprecated_member_use
                           fillColor: Colors.white.withOpacity(0.2),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -161,6 +167,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     labelText: "Email",
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
+                    // ignore: deprecated_member_use
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -184,6 +191,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     labelText: "Password",
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
+                    // ignore: deprecated_member_use
                     fillColor: Colors.white.withOpacity(0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),

@@ -119,6 +119,7 @@ class ProfileTab extends StatelessWidget {
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.pushAndRemoveUntil(
+                  // ignore: use_build_context_synchronously
                   context,
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                   (route) => false,
