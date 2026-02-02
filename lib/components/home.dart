@@ -1,20 +1,22 @@
-import 'package:eduhub/components/tabs/hometap/home_student_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../auth/signin.dart';
+import '../main.dart'; // flutterLocalNotificationsPlugin
+import 'tabs/hometap/home_student_tap.dart';
+import 'tabs/hometap/home_teacher_tab.dart';
 import 'tabs/coursetap/course_tab.dart';
 import 'tabs/classtap/class_teacher_tab.dart';
 import 'tabs/classtap/class_student_tab.dart';
 import 'tabs/assignmentstap/assignment_teacher_tab.dart';
 import 'tabs/assignmentstap/assignment_student_tab.dart';
-import 'tabs/hometap/home_teacher_tab.dart';
 import 'tabs/profile/profile_tab.dart';
 import 'utils/user_data.dart';
 import 'utils/localization.dart';
 
 class HomePage extends StatefulWidget {
-  final int initialNotification;
-  const HomePage({super.key, this.initialNotification = 0});
+  const HomePage({super.key, required int initialNotification});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -23,7 +25,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   int notificationCount = 0;
-
   String? role;
   String? firstName;
   String? lastName;
@@ -34,27 +35,82 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    notificationCount = widget.initialNotification;
-    _loadUserData();
+    _loadUserDataAndNotifications();
   }
 
-  Future<void> _loadUserData() async {
+  /// Load user data and notification count
+  Future<void> _loadUserDataAndNotifications() async {
     final userData = await UserData.loadUser();
-    if (userData != null) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (userData != null && user != null) {
       setState(() {
         role = userData.role;
         firstName = userData.firstName;
         lastName = userData.lastName;
         email = userData.email;
         selectedLanguage = userData.language ?? "English";
-        isLoading = false;
       });
+
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final doc = await userRef.get();
+
+      int currentCount = 0;
+      if (doc.exists) {
+        currentCount = (doc.data()?['notificationCount'] ?? 0) as int;
+        setState(() => notificationCount = currentCount);
+      }
+
+      // Increment notification only if not incremented yet
+      if (currentCount == 0) {
+        await _incrementLoginNotification(user.uid);
+      }
+
+      setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Error loading user data")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error loading user data")),
+      );
     }
+  }
+
+  /// Increment notification on login
+  Future<void> _incrementLoginNotification(String uid) async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+
+    // Transaction ensures safety in multi-device scenarios
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userRef);
+      final currentCount = snapshot.data()?['notificationCount'] ?? 0;
+      transaction.update(userRef, {'notificationCount': currentCount + 1});
+      setState(() => notificationCount = currentCount + 1);
+    });
+
+    // Store notification details
+    await userRef.update({
+      'notifications': FieldValue.arrayUnion([
+        {
+          'title': 'Welcome Back!',
+          'body': 'You logged in successfully',
+          'timestamp': Timestamp.now(),
+        }
+      ])
+    });
+
+    // Show local notification
+    const androidDetails = AndroidNotificationDetails(
+      'login_channel',
+      'Login Notifications',
+      channelDescription: 'Login alerts',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+await flutterLocalNotificationsPlugin.show( id:DateTime.now().millisecondsSinceEpoch ~/ 1000, title: 'Welcome Back!', body: 'Hello, you logged in successfully!', notificationDetails: notificationDetails, payload: 'login_notification', );
   }
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
@@ -68,22 +124,24 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _onNotificationPressed() {
-    setState(() {
-      notificationCount = 0;
-    });
-    // TODO: Navigate to notifications page
+  /// Clear notifications when tapping the bell
+  void _onNotificationPressed() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    setState(() => notificationCount = 0);
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .update({'notificationCount': 0});
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Build tabs dynamically based on role
     final tabs = [
       role == 'teacher'
           ? HomeTeacherTab(language: selectedLanguage)
@@ -101,9 +159,7 @@ class _HomePageState extends State<HomePage> {
         email: email,
         role: role,
         selectedLanguage: selectedLanguage,
-        onLanguageChanged: (lang) {
-          setState(() => selectedLanguage = lang);
-        },
+        onLanguageChanged: (lang) => setState(() => selectedLanguage = lang),
       ),
     ];
 
@@ -113,10 +169,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFF38A39D),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              // backgroundImage: const AssetImage("assets/images/profile.png"),
-            ),
+            const CircleAvatar(radius: 20),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,14 +178,10 @@ class _HomePageState extends State<HomePage> {
                 Text(
                   "${firstName ?? ""} ${lastName ?? ""}",
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(10),
@@ -140,9 +189,7 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     role != null ? role!.toUpperCase() : "",
                     style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500),
+                        fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -163,13 +210,11 @@ class _HomePageState extends State<HomePage> {
                   child: Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10)),
-                    constraints:
-                        const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: const Text(
-                      '+',
-                      style: TextStyle(
+                        color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '$notificationCount',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.bold),

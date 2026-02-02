@@ -21,9 +21,12 @@ class _WelcomePageState extends State<WelcomePage> {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
+        // Navigate to HomePage with optional initial notification count
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
+          MaterialPageRoute(
+            builder: (_) => HomePage(initialNotification: 0), // <-- remove const
+          ),
         );
       } else {
         Navigator.pushReplacement(
