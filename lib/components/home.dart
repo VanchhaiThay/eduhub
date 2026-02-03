@@ -186,9 +186,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    // Check if Dark Mode is active to adjust AppBar contrast
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final tabs = [
       role == 'teacher'
@@ -210,81 +213,127 @@ class _HomePageState extends State<HomePage> {
         onLanguageChanged: (lang) => setState(() => selectedLanguage = lang),
       ),
     ];
-
     return Scaffold(
-      appBar: AppBar(
+appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFF38A39D),
+        elevation: 0, // Remove shadow for a clean look
+        toolbarHeight: 70, // Increased height for better spacing
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark 
+                  ? [const Color(0xFF1F1F1F), const Color(0xFF2C2C2C)] 
+                  : [const Color(0xFF38A39D), const Color(0xFF2B827D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Row(
           children: [
-            // Clickable avatar to go to Profile tab
+            // --- Stylish Avatar ---
             GestureDetector(
-              onTap: () => setState(() => _selectedIndex = 4), // Profile tab index
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white,
-                backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
-                child: profileImage == null
-                    ? Text(
-                        "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
-                        style: const TextStyle(color: Colors.black),
-                      )
-                    : null,
+              onTap: () => setState(() => _selectedIndex = 4),
+              child: Container(
+                padding: const EdgeInsets.all(2), // White border effect
+                decoration: const BoxDecoration(
+                  color: Colors.white24,
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.white,
+                  backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                  child: profileImage == null
+                      ? Text(
+                          "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
+                          style: const TextStyle(
+                            color: Color(0xFF38A39D), 
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        )
+                      : null,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "${firstName ?? ""} ${lastName ?? ""}",
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    role != null ? role!.toUpperCase() : "",
+            const SizedBox(width: 12),
+            // --- User Info ---
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "${firstName ?? ""} ${lastName ?? ""}",
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500),
+                      fontSize: 17, 
+                      fontWeight: FontWeight.bold, 
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  // Role Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white30, width: 0.5),
+                    ),
+                    child: Text(
+                      role?.toUpperCase() ?? "",
+                      style: const TextStyle(
+                        fontSize: 10, 
+                        color: Colors.white, 
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
-          Stack(
-            children: [
-              IconButton(
-                onPressed: _showNotifications,
-                icon: const Icon(Icons.notifications, color: Colors.white),
-              ),
-              if (notificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                        color: Colors.red, borderRadius: BorderRadius.circular(10)),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      '$notificationCount',
-                      style: const TextStyle(
+          // --- Custom Notification Icon ---
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  onPressed: _showNotifications,
+                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
+                ),
+                if (notificationCount > 0)
+                  Positioned(
+                    right: 10,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFF38A39D), width: 1.5),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      child: Text(
+                        '$notificationCount',
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

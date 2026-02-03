@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/user_data.dart';
 import '../../utils/localization.dart';
+import '../../utils/theme_manager.dart'; // Import your manager
 
 class ProfileTab extends StatelessWidget {
   final String? firstName;
@@ -24,180 +25,223 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Header with Gradient
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    // Detect if the app is currently in Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    String initials = "${firstName?.isNotEmpty == true ? firstName![0] : ''}${lastName?.isNotEmpty == true ? lastName![0] : ''}".toUpperCase();
+
+    return Scaffold(
+      // The background will now automatically adapt based on your Theme data
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // --- Modern Header ---
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
               children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    "${firstName?.substring(0, 1) ?? ''}${lastName?.substring(0, 1) ?? ''}",
-                    style: const TextStyle(fontSize: 36, color: Colors.black87, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  "$firstName $lastName",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  "$role",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          // Info Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 5,
-              shadowColor: Colors.grey.shade300,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _infoRow(Localization.text(selectedLanguage, 'email'), email),
-                    const Divider(),
-                    _infoRow(Localization.text(selectedLanguage, 'firstName'), firstName),
-                    const Divider(),
-                    _infoRow(Localization.text(selectedLanguage, 'lastName'), lastName),
-                    const Divider(),
-                    _infoRow(Localization.text(selectedLanguage, 'role'), role),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          // Language Selection
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  Localization.text(selectedLanguage, 'selectLanguage'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  height: 200,
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: isDark 
+                        ? [const Color(0xFF232526), const Color(0xFF414345)] // Darker gradient
+                        : [const Color(0xFF1E3C72), const Color(0xFF2A5298)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(40)),
                   ),
-                  child: DropdownButton<String>(
-                    value: selectedLanguage,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    items: const [
-                      DropdownMenuItem(value: "Khmer", child: Text("Khmer")),
-                      DropdownMenuItem(value: "English", child: Text("English")),
-                      DropdownMenuItem(value: "Chinese", child: Text("Chinese")),
-                      DropdownMenuItem(value: "Vietnamese", child: Text("Vietnamese")),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        onLanguageChanged(value);
-                        UserData.saveLanguage(value);
-                      }
-                    },
+                ),
+                Positioned(
+                  top: 130,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      shape: BoxShape.circle,
+                      boxShadow: const [BoxShadow(blurRadius: 10, color: Colors.black12, spreadRadius: 2)],
+                    ),
+                    child: CircleAvatar(
+                      radius: 55,
+                      backgroundColor: isDark ? Colors.grey[800] : Colors.blue.shade50,
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          fontSize: 32, 
+                          color: isDark ? Colors.tealAccent : const Color(0xFF1E3C72), 
+                          fontWeight: FontWeight.w800
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
 
-          const SizedBox(height: 40),
+            const SizedBox(height: 70),
 
-          // Logout Button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
+            Text(
+              "${firstName ?? ''} ${lastName ?? ''}",
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              role?.toUpperCase() ?? "MEMBER",
+              style: TextStyle(fontSize: 14, color: isDark ? Colors.tealAccent : Colors.blue.shade700, fontWeight: FontWeight.w600, letterSpacing: 1.2),
+            ),
+
+            const SizedBox(height: 30),
+
+            // --- Details Card ---
+            _buildSectionTitle(Localization.text(selectedLanguage, 'accountDetails')),
+            _buildSettingsCard(context, [
+              _infoRow(context, Icons.email_outlined, Localization.text(selectedLanguage, 'email'), email),
+              _infoRow(context, Icons.person_outline, Localization.text(selectedLanguage, 'firstName'), firstName),
+              _infoRow(context, Icons.badge_outlined, Localization.text(selectedLanguage, 'lastName'), lastName),
+            ]),
+
+            const SizedBox(height: 25),
+
+            // --- Preferences Card ---
+            _buildSectionTitle(Localization.text(selectedLanguage, 'preferences')),
+            _buildSettingsCard(context, [
+              _buildLanguageDropdown(context),
+              const Divider(height: 1),
+              // --- DARK MODE TOGGLE ---
+              SwitchListTile.adaptive(
+                secondary: Icon(Icons.dark_mode_outlined, color: Colors.blueGrey.shade400),
+                title: const Text("Dark Mode", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                value: isDark,
+                activeColor: Colors.tealAccent,
+                onChanged: (bool value) {
+                  ThemeManager.toggleTheme(value);
                 },
-                icon: const Icon(Icons.logout),
-                label: const Text("Logout"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  elevation: 5,
+              ),
+            ]),
+
+            const SizedBox(height: 40),
+
+            // --- Logout Button ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              child: TextButton.icon(
+                onPressed: () => _showLogoutDialog(context),
+                icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                label: const Text("Sign Out", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.red.withOpacity(0.2))),
+                  backgroundColor: Colors.red.withOpacity(0.05),
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 30),
+  // --- UI Helper Methods (Modified to support context/theme) ---
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 0.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 25),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _infoRow(BuildContext context, IconData icon, String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: Colors.blueGrey.shade400),
+          const SizedBox(width: 15),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              Text(value ?? "-", style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  // Helper widget for info rows
-  Widget _infoRow(String label, String? value) {
+  Widget _buildLanguageDropdown(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
-          Text(
-            "$label: ",
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.black87,
+          Icon(Icons.translate, size: 22, color: Colors.blueGrey.shade400),
+          const SizedBox(width: 15),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedLanguage,
+                isExpanded: true,
+                dropdownColor: Theme.of(context).cardColor,
+                items: ["Khmer", "English", "Chinese", "Vietnamese"]
+                    .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    onLanguageChanged(value);
+                    UserData.saveLanguage(value);
+                  }
+                },
+              ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value ?? "-",
-              style: const TextStyle(fontSize: 16, color: Colors.black54),
-            ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to exit?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+import 'package:eduhub/components/utils/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -11,12 +12,15 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // 1. Initialize Theme Preference
+  await ThemeManager.init();
+
+  // 2. Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize local notifications
+  // 3. Initialize local notifications
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -26,8 +30,7 @@ Future<void> main() async {
   await flutterLocalNotificationsPlugin.initialize(
     settings: initSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) {
-      // ignore: avoid_print
-      print('Notification tapped: ${response.payload}');
+      debugPrint('Notification tapped: ${response.payload}');
     },
   );
 
@@ -39,11 +42,44 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'EduHub',
-      theme: ThemeData(primarySwatch: Colors.teal),
-      home: const WelcomePage(),
+    // 4. Wrap MaterialApp with ValueListenableBuilder to listen for theme changes
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeManager.themeMode,
+      builder: (context, currentMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'EduHub',
+          
+          // Theme Configuration
+          themeMode: currentMode, 
+          
+          // Light Theme Data
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.teal,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: const Color(0xFFF8F9FD),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF38A39D),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          
+          // Dark Theme Data
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.teal,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF121212),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF1F1F1F),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          
+          home: const WelcomePage(),
+        );
+      },
     );
   }
 }
