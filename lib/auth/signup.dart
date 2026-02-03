@@ -1,4 +1,3 @@
-import 'package:eduhub/auth/signin.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,8 +15,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  String role = "student"; // default role
+  String role = "student"; 
   bool isLoading = false;
+  bool isPasswordVisible = false;
 
   Future<void> signup() async {
     if (isLoading) return;
@@ -26,9 +26,7 @@ class _SignUpPageState extends State<SignUpPage> {
         lastNameController.text.isEmpty ||
         emailController.text.isEmpty ||
         passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+      _showStatus("Please fill all fields", isError: true);
       return;
     }
 
@@ -37,61 +35,78 @@ class _SignUpPageState extends State<SignUpPage> {
     try {
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passwordController.text.trim(),
-          );
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
       await FirebaseFirestore.instance
           .collection("users")
           .doc(userCredential.user!.uid)
           .set({
-            "firstName": firstNameController.text.trim(),
-            "lastName": lastNameController.text.trim(),
-            "email": emailController.text.trim(),
-            "role": role,
-            "createdAt": Timestamp.now(),
-          });
+        "firstName": firstNameController.text.trim(),
+        "lastName": lastNameController.text.trim(),
+        "email": emailController.text.trim(),
+        "role": role,
+        "createdAt": Timestamp.now(),
+      });
 
-      ScaffoldMessenger.of(
-        // ignore: use_build_context_synchronously
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Signup success")));
-
-      // ignore: use_build_context_synchronously
+      if (!mounted) return;
+      _showStatus("Account created successfully!");
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(
-        // ignore: use_build_context_synchronously
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? "Signup failed")));
+      _showStatus(e.message ?? "Signup failed", isError: true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        // ignore: use_build_context_synchronously
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      _showStatus("Error: $e", isError: true);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    setState(() => isLoading = false);
   }
 
-  Widget buildRoleCheckbox(String value, String label) {
-    return GestureDetector(
-      onTap: () => setState(() => role = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              role == value ? Icons.check_box : Icons.check_box_outline_blank,
-              color: Colors.white,
+  void _showStatus(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  // Professional Role Selector Component
+  Widget buildRoleButton(String value, String label, IconData icon) {
+    bool isSelected = role == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => role = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            // ignore: deprecated_member_use
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              // ignore: deprecated_member_use
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.3),
             ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF38A39D) : Colors.white70,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF38A39D) : Colors.white70,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -101,186 +116,151 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF38A39D),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Image.asset("assets/images/signup.png", width: 200),
-                const SizedBox(height: 30),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Join EduHub",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Create an account to start your journey",
+                // ignore: deprecated_member_use
+                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+              Image(image: AssetImage("assets/images/signup.png"),width: 170,),
+                ],
+              ),
 
-                // First and Last Name in Row
-                Row(
+              // Glassmorphic Signup Form
+              Container(
+                decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(25),
+                  // ignore: deprecated_member_use
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: firstNameController,
-                        decoration: InputDecoration(
-                          labelText: "First Name",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          filled: true,
-                          // ignore: deprecated_member_use
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 15,
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                    // First & Last Name
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField(firstNameController, "First Name", Icons.person_outline)),
+                        const SizedBox(width: 15),
+                        Expanded(child: _buildTextField(lastNameController, "Last Name", null)),
+                      ],
                     ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: TextField(
-                        controller: lastNameController,
-                        decoration: InputDecoration(
-                          labelText: "Last Name",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          filled: true,
-                          // ignore: deprecated_member_use
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 15,
-                          ),
+                    const SizedBox(height: 20),
+                    _buildTextField(emailController, "Email Address", Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      passwordController, 
+                      "Password", 
+                      Icons.lock_outline, 
+                      isPassword: true,
+                    ),
+                    const SizedBox(height: 25),
+                    
+                    const Text("I am a:", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const SizedBox(height: 12),
+                    
+                    // Professional Role Toggles
+                    Row(
+                      children: [
+                        buildRoleButton("student", "Student", Icons.school_outlined),
+                        const SizedBox(width: 15),
+                        buildRoleButton("teacher", "Teacher", Icons.co_present_outlined),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Sign Up Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : signup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF38A39D),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          elevation: 0,
                         ),
-                        style: const TextStyle(color: Colors.white),
+                        child: isLoading
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38A39D)))
+                            : const Text("CREATE ACCOUNT", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 15),
-
-                // Email
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    // ignore: deprecated_member_use
-                    fillColor: Colors.white.withOpacity(0.2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 15,
-                    ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 15),
-
-                // Password
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    // ignore: deprecated_member_use
-                    fillColor: Colors.white.withOpacity(0.2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 15,
-                    ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 20),
-
-                // Select Role Label
-                const Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    "Select your role",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Role checkboxes
-                Row(
+              ),
+              const SizedBox(height: 30),
+              
+              // Footer
+              Center(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    buildRoleCheckbox("student", "Student"),
-                    const SizedBox(width: 15),
-                    buildRoleCheckbox("teacher", "Teacher"),
-                  ],
-                ),
-                const SizedBox(height: 30),
-
-                // Sign Up button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : signup,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF38A39D),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 5,
-                      shadowColor: Colors.black45,
-                      textStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: isLoading
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFF38A39D),
-                            ),
-                          )
-                        : const Text("Sign Up"),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Already have an account"),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
-                        );
-                      },
-                      child: Text(
+                    // ignore: deprecated_member_use
+                    Text("Already have an account? ", style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Text(
                         "Sign In",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData? icon, {bool isPassword = false, TextInputType? keyboardType}) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword && !isPasswordVisible,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.white70, size: 20) : null,
+        suffixIcon: isPassword ? IconButton(
+          icon: Icon(isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white70, size: 18),
+          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+        ) : null,
+        // ignore: deprecated_member_use
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
+        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
       ),
     );
   }
