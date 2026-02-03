@@ -1,3 +1,4 @@
+import 'package:eduhub/components/utils/notification_scheduler.dart';
 import 'package:eduhub/components/utils/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -33,7 +34,15 @@ Future<void> main() async {
       debugPrint('Notification tapped: ${response.payload}');
     },
   );
+  WidgetsFlutterBinding.ensureInitialized();
 
+  // 1. Initialize Theme, Firebase, and Supabase as before...
+  
+  // 2. Initialize Workmanager for background tasks
+  await NotificationScheduler.init();
+  
+  // 3. Start the hourly timer
+  NotificationScheduler.scheduleHourlyNotification();
   runApp(const MyApp());
 }
 

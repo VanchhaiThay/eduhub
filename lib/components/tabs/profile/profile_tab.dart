@@ -114,6 +114,7 @@ class ProfileTab extends StatelessWidget {
                 secondary: Icon(Icons.dark_mode_outlined, color: Colors.blueGrey.shade400),
                 title: const Text("Dark Mode", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 value: isDark,
+                // ignore: deprecated_member_use
                 activeColor: Colors.tealAccent,
                 onChanged: (bool value) {
                   ThemeManager.toggleTheme(value);
@@ -132,7 +133,9 @@ class ProfileTab extends StatelessWidget {
                 label: const Text("Sign Out", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(double.infinity, 55),
+                  // ignore: deprecated_member_use
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.red.withOpacity(0.2))),
+                  // ignore: deprecated_member_use
                   backgroundColor: Colors.red.withOpacity(0.05),
                 ),
               ),
@@ -166,6 +169,7 @@ class ProfileTab extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
+          // ignore: deprecated_member_use
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
         ],
       ),

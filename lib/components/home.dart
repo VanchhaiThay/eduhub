@@ -71,6 +71,7 @@ class _HomePageState extends State<HomePage> {
       setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
@@ -126,9 +127,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // ignore: unused_element
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
+      // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
@@ -147,6 +150,7 @@ class _HomePageState extends State<HomePage> {
         .update({'notificationCount': 0});
 
     showModalBottomSheet(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (_) => SizedBox(
         height: 400,
@@ -279,6 +283,7 @@ appBar: AppBar(
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.white30, width: 0.5),

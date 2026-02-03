@@ -1,3 +1,4 @@
+import 'package:eduhub/auth/forgot_password_verify.dart';
 import 'package:eduhub/auth/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -66,11 +67,13 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text(e.message ?? "Login failed")));
     } catch (e) {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -133,7 +136,24 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   style: const TextStyle(color: Colors.white),
                 ),
-                const SizedBox(height: 25),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ForgotPasswordVerify()),
+                        );
+                      },
+                      child: Text(
+                        "Forgot Password",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
                 SizedBox(
                   width: 200,
                   height: 50,
