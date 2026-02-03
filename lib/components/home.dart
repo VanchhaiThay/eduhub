@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   String selectedLanguage = "English";
   bool isLoading = true;
 
+  File? profileImage;
   List<Map<String, dynamic>> notifications = [];
 
   @override
@@ -62,7 +64,6 @@ class _HomePageState extends State<HomePage> {
         notifications = List<Map<String, dynamic>>.from(data['notifications'] ?? []);
       }
 
-      // Increment login notification only if first login
       if (notificationCount == 0) {
         await _incrementLoginNotification(user.uid);
       }
@@ -99,7 +100,6 @@ class _HomePageState extends State<HomePage> {
       notifications.insert(0, newNotification);
     });
 
-    // Show local system notification
     const androidDetails = AndroidNotificationDetails(
       'login_channel',
       'Login Notifications',
@@ -112,15 +112,19 @@ class _HomePageState extends State<HomePage> {
     const notificationDetails = NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
-      id:DateTime.now().millisecondsSinceEpoch ~/ 1000, // id
-      title:'Welcome Back!', // title
-      body:'Hello, you logged in successfully!', // body
-      notificationDetails: notificationDetails, // details
-      payload: 'login_notification', // payload
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: 'Welcome Back!',
+      body: 'Hello, eduhub can help you improve more!',
+      notificationDetails: notificationDetails,
+      payload: 'login_notification',
     );
   }
 
-  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -168,7 +172,8 @@ class _HomePageState extends State<HomePage> {
                         return ListTile(
                           title: Text(notif['title'] ?? ""),
                           subtitle: Text(notif['body'] ?? ""),
-                          trailing: Text(dateStr, style: const TextStyle(fontSize: 10)),
+                          trailing:
+                              Text(dateStr, style: const TextStyle(fontSize: 10)),
                         );
                       },
                     ),
@@ -212,7 +217,21 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFF38A39D),
         title: Row(
           children: [
-            const CircleAvatar(radius: 20),
+            // Clickable avatar to go to Profile tab
+            GestureDetector(
+              onTap: () => setState(() => _selectedIndex = 4), // Profile tab index
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.white,
+                backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                child: profileImage == null
+                    ? Text(
+                        "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
+                        style: const TextStyle(color: Colors.black),
+                      )
+                    : null,
+              ),
+            ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
