@@ -1,4 +1,4 @@
-import 'package:eduhub/auth/forgot_password_verify.dart';
+import 'package:eduhub/auth/forgot_password.dart';
 import 'package:eduhub/auth/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: TextButton(
                           onPressed: () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ForgotPasswordVerify()),
+                            MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
                           ),
                           child: Text(
                             "Forgot Password?",
