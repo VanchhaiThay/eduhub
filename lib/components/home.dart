@@ -71,7 +71,6 @@ class _HomePageState extends State<HomePage> {
       setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
@@ -88,7 +87,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     final newNotification = {
-      'title': 'Welcome Back!',
+      'title': 'EduHub welcome!',
       'body': 'You logged in successfully',
       'timestamp': Timestamp.now(),
     };
@@ -127,11 +126,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // ignore: unused_element
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
-      // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
@@ -150,7 +147,6 @@ class _HomePageState extends State<HomePage> {
         .update({'notificationCount': 0});
 
     showModalBottomSheet(
-      // ignore: use_build_context_synchronously
       context: context,
       builder: (_) => SizedBox(
         height: 400,
@@ -176,8 +172,7 @@ class _HomePageState extends State<HomePage> {
                         return ListTile(
                           title: Text(notif['title'] ?? ""),
                           subtitle: Text(notif['body'] ?? ""),
-                          trailing:
-                              Text(dateStr, style: const TextStyle(fontSize: 10)),
+                          trailing: Text(dateStr, style: const TextStyle(fontSize: 10)),
                         );
                       },
                     ),
@@ -190,11 +185,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-if (isLoading) {
+    if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Check if Dark Mode is active to adjust AppBar contrast
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final tabs = [
@@ -217,16 +211,17 @@ if (isLoading) {
         onLanguageChanged: (lang) => setState(() => selectedLanguage = lang),
       ),
     ];
+
     return Scaffold(
-appBar: AppBar(
+      appBar: AppBar(
         automaticallyImplyLeading: false,
-        elevation: 0, // Remove shadow for a clean look
-        toolbarHeight: 70, // Increased height for better spacing
+        elevation: 0,
+        toolbarHeight: 70,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isDark 
-                  ? [const Color(0xFF1F1F1F), const Color(0xFF2C2C2C)] 
+              colors: isDark
+                  ? [const Color(0xFF1F1F1F), const Color(0xFF2C2C2C)]
                   : [const Color(0xFF38A39D), const Color(0xFF2B827D)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -235,11 +230,10 @@ appBar: AppBar(
         ),
         title: Row(
           children: [
-            // --- Stylish Avatar ---
             GestureDetector(
               onTap: () => setState(() => _selectedIndex = 4),
               child: Container(
-                padding: const EdgeInsets.all(2), // White border effect
+                padding: const EdgeInsets.all(2),
                 decoration: const BoxDecoration(
                   color: Colors.white24,
                   shape: BoxShape.circle,
@@ -247,12 +241,13 @@ appBar: AppBar(
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor: Colors.white,
-                  backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                  backgroundImage:
+                      profileImage != null ? FileImage(profileImage!) : null,
                   child: profileImage == null
                       ? Text(
                           "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
                           style: const TextStyle(
-                            color: Color(0xFF38A39D), 
+                            color: Color(0xFF38A39D),
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -262,7 +257,6 @@ appBar: AppBar(
               ),
             ),
             const SizedBox(width: 12),
-            // --- User Info ---
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,18 +266,17 @@ appBar: AppBar(
                     "${firstName ?? ""} ${lastName ?? ""}",
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 17, 
-                      fontWeight: FontWeight.bold, 
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  // Role Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.white30, width: 0.5),
@@ -291,8 +284,8 @@ appBar: AppBar(
                     child: Text(
                       role?.toUpperCase() ?? "",
                       style: const TextStyle(
-                        fontSize: 10, 
-                        color: Colors.white, 
+                        fontSize: 10,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 1.0,
                       ),
@@ -304,7 +297,6 @@ appBar: AppBar(
           ],
         ),
         actions: [
-          // --- Custom Notification Icon ---
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: Stack(
@@ -312,7 +304,8 @@ appBar: AppBar(
               children: [
                 IconButton(
                   onPressed: _showNotifications,
-                  icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
+                  icon: const Icon(Icons.notifications_none_rounded,
+                      color: Colors.white, size: 28),
                 ),
                 if (notificationCount > 0)
                   Positioned(
@@ -323,9 +316,14 @@ appBar: AppBar(
                       decoration: BoxDecoration(
                         color: Colors.redAccent,
                         shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFF38A39D), width: 1.5),
+                        border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF1F1F1F)
+                                : const Color(0xFF38A39D),
+                            width: 1.5),
                       ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      constraints:
+                          const BoxConstraints(minWidth: 18, minHeight: 18),
                       child: Text(
                         '$notificationCount',
                         style: const TextStyle(
@@ -343,32 +341,71 @@ appBar: AppBar(
         ],
       ),
       body: tabs[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: Localization.text(selectedLanguage, 'home'),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.school),
-            label: Localization.text(selectedLanguage, 'course'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.book),
-            label: Localization.text(selectedLanguage, 'class'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.assignment),
-            label: Localization.text(selectedLanguage, 'assignments'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: Localization.text(selectedLanguage, 'profile'),
-          ),
-        ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          selectedItemColor: const Color(0xFF2B827D),
+          unselectedItemColor: Colors.grey,
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.home,
+                size: _selectedIndex == 0 ? 28 : 24,
+              ),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.school,
+                size: _selectedIndex == 1 ? 28 : 24,
+              ),
+              label: 'Course',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.book,
+                size: _selectedIndex == 2 ? 28 : 24,
+              ),
+              label: 'Class',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.assignment,
+                size: _selectedIndex == 3 ? 28 : 24,
+              ),
+              label: 'Assignments',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(
+                Icons.person,
+                size: _selectedIndex == 4 ? 28 : 24,
+              ),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
