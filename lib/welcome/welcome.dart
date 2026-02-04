@@ -18,14 +18,15 @@ class _WelcomePageState extends State<WelcomePage> {
 
     // Wait 3 seconds then navigate
     Timer(const Duration(seconds: 3), () {
+      if (!mounted) return; // Check if widget is still in tree
+
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        // Navigate to HomePage with optional initial notification count
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => HomePage(initialNotification: 0), // <-- remove const
+            builder: (_) => HomePage(initialNotification: 0),
           ),
         );
       } else {
@@ -39,8 +40,12 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Detect Brightness
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFED811),
+      // Toggle background: Yellow for Light, Deep Grey/Black for Dark
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFED811),
       body: SafeArea(
         child: Column(
           children: [
@@ -50,9 +55,13 @@ class _WelcomePageState extends State<WelcomePage> {
             Container(
               width: 160,
               height: 160,
-              decoration: const BoxDecoration(
-                color: Color(0xFF2CB5AE),
+              decoration: BoxDecoration(
+                // We keep the Teal brand color, or dim it slightly for dark mode
+                color: isDark ? const Color(0xFF269A94) : const Color(0xFF2CB5AE),
                 shape: BoxShape.circle,
+                boxShadow: isDark 
+                  ? [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)] 
+                  : null,
               ),
               alignment: Alignment.center,
               child: const Text(
@@ -60,28 +69,49 @@ class _WelcomePageState extends State<WelcomePage> {
                 style: TextStyle(
                   fontSize: 80,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.white, // "E" stays white in both modes
                 ),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            const Text(
+            Text(
               "EduHub",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 28, 
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black, // Dynamic text
+              ),
             ),
-            const Text(
+            Text(
               "Hub for Students & Teachers",
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white70 : Colors.black87, // Subtle contrast
+              ),
             ),
+            
             const Spacer(),
-            const Row(
+
+            // Loading Section
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(strokeWidth: 2),
-                SizedBox(width: 12),
-                Text("Loading"),
+                CircularProgressIndicator(
+                  strokeWidth: 2,
+                  // Teal in light mode, White/Amber in dark mode
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDark ? Colors.white : const Color(0xFF2CB5AE),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Loading",
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 30),

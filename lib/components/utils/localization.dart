@@ -37,6 +37,8 @@ class Localization {
       "music": "Music",
       "tech": "Tech",
       "sports": "Sports",
+      "loading": "Loading",
+  "hubSubtitle": "Hub for Students & Teachers",
     },
     "Khmer": {
       "home": "ផ្ទះ",
@@ -75,6 +77,8 @@ class Localization {
       "music": "តន្ត្រី",
       "tech": "បច្ចេកវិទ្យា",
       "sports": "កីឡា",
+      "loading": "កំពុងផ្ទុក",
+  "hubSubtitle": "មជ្ឈមណ្ឌលសម្រាប់សិស្ស និងគ្រូ",
     },
     "Chinese": {
       "home": "主页",
@@ -113,6 +117,8 @@ class Localization {
       "music": "音乐",
       "tech": "技术",
       "sports": "体育",
+      "loading": "加载中",
+  "hubSubtitle": "学生与教师中心",
     },
     "Vietnamese": {
       "home": "Trang chủ",
@@ -151,6 +157,8 @@ class Localization {
       "music": "Âm nhạc",
       "tech": "Công nghệ",
       "sports": "Thể thao",
+      "loading": "Đang tải",
+  "hubSubtitle": "Trung tâm cho Học sinh & Giáo viên",
     }
   };
 
