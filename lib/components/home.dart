@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../auth/signin.dart';
 import '../main.dart'; // flutterLocalNotificationsPlugin
-import 'tabs/hometap/home_student_tap.dart';
+import 'tabs/hometap/home_students/home_student_tap.dart';
 import 'tabs/hometap/home_teacher_tab.dart';
 import 'tabs/coursetap/course_tab.dart';
 import 'tabs/classtap/class_teacher_tab.dart';

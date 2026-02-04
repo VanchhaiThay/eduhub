@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:eduhub/components/utils/localization.dart';
 import 'package:flutter/material.dart';
+import '../../../utils/localization.dart';
 
 class HomeStudentTab extends StatefulWidget {
   final String language;
@@ -22,13 +22,16 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
   int _currentPage = 0;
   Timer? _timer;
 
+  // Search logic variables
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
   final List<String> sliderImages = [
     "assets/images/slide1.png",
     "assets/images/slide2.png",
     "assets/images/slide3.png",
   ];
 
-  // Updated to use Localization Keys
   final List<Map<String, dynamic>> subjects = [
     {"nameKey": "math", "icon": Icons.calculate},
     {"nameKey": "science", "icon": Icons.science},
@@ -68,7 +71,21 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
+    _searchController.dispose(); // Clean up controller
     super.dispose();
+  }
+
+  // Logic to filter subjects based on localized text
+  List<Map<String, dynamic>> _getFilteredSubjects() {
+    if (_searchQuery.isEmpty) {
+      return isExpanded ? subjects : subjects.take(6).toList();
+    }
+
+    return subjects.where((subject) {
+      // We get the translated name based on the current language
+      String localizedName = Localization.text(widget.language, subject['nameKey']).toLowerCase();
+      return localizedName.contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   @override
@@ -84,73 +101,8 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
           _buildSearchAndHeader(),
           const SizedBox(height: 20),
           _buildSubjectGrid(),
-          _buildSeeMoreButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubjectGrid() {
-    final displayList = isExpanded ? subjects : subjects.take(6).toList();
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: displayList.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 20,
-        childAspectRatio: 0.9,
-      ),
-      itemBuilder: (context, index) {
-        return Column(
-          children: [
-            Container(
-              height: 65, width: 65,
-              decoration: BoxDecoration(
-                color: const Color(0xFF38A39D).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                displayList[index]['icon'],
-                color: const Color(0xFF38A39D),
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              // TRANSLATED SUBJECT NAME
-              Localization.text(widget.language, displayList[index]['nameKey']),
-              style: TextStyle(
-                fontSize: 13, 
-                fontWeight: FontWeight.w600, 
-                color: Colors.grey[800]
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSeeMoreButton() {
-    return TextButton(
-      onPressed: () => setState(() => isExpanded = !isExpanded),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            // TRANSLATED BUTTON TEXT
-            isExpanded 
-              ? Localization.text(widget.language, "seeLess") 
-              : Localization.text(widget.language, "seeMore"),
-            style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold),
-          ),
-          Icon(
-            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
-            color: const Color(0xFF38A39D)
-          ),
+          // Hide "See More" button if user is searching
+          if (_searchQuery.isEmpty) _buildSeeMoreButton(),
         ],
       ),
     );
@@ -169,9 +121,23 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
         ),
         const SizedBox(height: 12),
         TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
           decoration: InputDecoration(
             hintText: Localization.text(widget.language, "searchsubjects"),
             prefixIcon: const Icon(Icons.search, color: Colors.grey),
+            suffixIcon: _searchQuery.isNotEmpty 
+                ? IconButton(
+                    icon: const Icon(Icons.clear), 
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = "");
+                    }) 
+                : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
               borderSide: BorderSide.none,
@@ -184,6 +150,81 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     );
   }
 
+  Widget _buildSubjectGrid() {
+    final filteredList = _getFilteredSubjects();
+
+    if (filteredList.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Text("No subjects found."),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: filteredList.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.8, // Adjusted to prevent text overflow
+      ),
+      itemBuilder: (context, index) {
+        return Column(
+          children: [
+            Container(
+              height: 65, width: 65,
+              decoration: BoxDecoration(
+                color: const Color(0xFF38A39D).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                filteredList[index]['icon'],
+                color: const Color(0xFF38A39D),
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              Localization.text(widget.language, filteredList[index]['nameKey']),
+              style: TextStyle(
+                fontSize: 13, 
+                fontWeight: FontWeight.w600, 
+                color: Colors.grey[800]
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSeeMoreButton() {
+    return TextButton(
+      onPressed: () => setState(() => isExpanded = !isExpanded),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            isExpanded 
+              ? Localization.text(widget.language, "seeLess") 
+              : Localization.text(widget.language, "seeMore"),
+            style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold),
+          ),
+          Icon(
+            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
+            color: const Color(0xFF38A39D)
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Welcome card and Image slider remain the same
   Widget _buildWelcomeCard() {
     return Container(
       decoration: BoxDecoration(
