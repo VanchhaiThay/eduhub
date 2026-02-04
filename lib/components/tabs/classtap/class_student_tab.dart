@@ -10,8 +10,8 @@ class ClassStudentTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        Localization.text(language, 'classesStudent'),
-        style: const TextStyle(fontSize: 20),
+        Localization.text(language, "welcomeDesc"),
+        style: const TextStyle(fontSize: 24),
       ),
     );
   }

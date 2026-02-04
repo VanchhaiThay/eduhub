@@ -14,7 +14,6 @@ import 'tabs/assignmentstap/assignment_teacher_tab.dart';
 import 'tabs/assignmentstap/assignment_student_tab.dart';
 import 'tabs/profile/profile_tab.dart';
 import 'utils/user_data.dart';
-import 'utils/localization.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required int initialNotification});
@@ -71,6 +70,7 @@ class _HomePageState extends State<HomePage> {
       setState(() => isLoading = false);
     } else {
       setState(() => isLoading = false);
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
@@ -126,9 +126,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // ignore: unused_element
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.pushAndRemoveUntil(
+      // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
@@ -147,6 +149,7 @@ class _HomePageState extends State<HomePage> {
         .update({'notificationCount': 0});
 
     showModalBottomSheet(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (_) => SizedBox(
         height: 400,
@@ -194,7 +197,15 @@ class _HomePageState extends State<HomePage> {
     final tabs = [
       role == 'teacher'
           ? HomeTeacherTab(language: selectedLanguage)
-          : HomeStudentTab(language: selectedLanguage),
+          : HomeStudentTab(
+              language: selectedLanguage,
+              // This is the logic that switches the tab
+              onLearnMore: () {
+                setState(() {
+                  _selectedIndex = 2; // Index of the Class Tab
+                });
+              },
+            ),
       CourseTab(selectedLanguage: selectedLanguage),
       role == 'teacher'
           ? ClassTeacherTab(language: selectedLanguage)
@@ -211,7 +222,6 @@ class _HomePageState extends State<HomePage> {
         onLanguageChanged: (lang) => setState(() => selectedLanguage = lang),
       ),
     ];
-
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -277,6 +287,7 @@ class _HomePageState extends State<HomePage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.white30, width: 0.5),
@@ -341,70 +352,74 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: tabs[_selectedIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
-              spreadRadius: 2,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                // ignore: deprecated_member_use
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
-          ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          selectedItemColor: const Color(0xFF2B827D),
-          unselectedItemColor: Colors.grey,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.home,
-                size: _selectedIndex == 0 ? 28 : 24,
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            selectedItemColor: const Color(0xFF2B827D),
+            unselectedItemColor: Colors.grey,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.home,
+                  size: _selectedIndex == 0 ? 28 : 24,
+                ),
+                label: 'Home',
               ),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.school,
-                size: _selectedIndex == 1 ? 28 : 24,
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.school,
+                  size: _selectedIndex == 1 ? 28 : 24,
+                ),
+                label: 'Course',
               ),
-              label: 'Course',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.book,
-                size: _selectedIndex == 2 ? 28 : 24,
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.book,
+                  size: _selectedIndex == 2 ? 28 : 24,
+                ),
+                label: 'Class',
               ),
-              label: 'Class',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.assignment,
-                size: _selectedIndex == 3 ? 28 : 24,
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.assignment,
+                  size: _selectedIndex == 3 ? 28 : 24,
+                ),
+                label: 'Assignments',
               ),
-              label: 'Assignments',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(
-                Icons.person,
-                size: _selectedIndex == 4 ? 28 : 24,
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.person,
+                  size: _selectedIndex == 4 ? 28 : 24,
+                ),
+                label: 'Profile',
               ),
-              label: 'Profile',
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

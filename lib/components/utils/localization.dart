@@ -18,6 +18,11 @@ class Localization {
       "email": "Email",
       "role": "Role",
       "selectLanguage": "Select Language",
+      "welcomeTitle": "Welcome to Eduhub",
+      "welcomeDesc": "Boost your learning skills. Access homework, research materials, and teacher feedback all in one place.",
+      "learnmore": "Learn More",
+      "allsubjcts": "All Subjects",
+      "searchsubjects": "Search subjects...",
     },
     "Khmer": {
       "home": "ផ្ទះ",
@@ -37,6 +42,11 @@ class Localization {
       "email": "អ៊ីម៉ែល",
       "role": "តួនាទី",
       "selectLanguage": "ជ្រើសភាសា",
+      "welcomeTitle": "សូមស្វាគមន៍មកកាន់ Eduhub",
+      "welcomeDesc": "បង្កើនជំនាញសិក្សារបស់អ្នក។ ចូលប្រើកិច្ចការផ្ទះ សម្ភារៈស្រាវជ្រាវ និងមតិកែលម្អរបស់គ្រូនៅកន្លែងតែមួយ។",
+      "learnmore": "ស្វែងយល់បន្ថែម",
+      "allsubjcts": "មុខវិជ្ជាទាំងអស់",
+      "searchsubjects": "ស្វែងរកមុខវិជ្ជា...",
     },
     "Chinese": {
       "home": "主页",
@@ -56,6 +66,11 @@ class Localization {
       "email": "电子邮件",
       "role": "角色",
       "selectLanguage": "选择语言",
+      "welcomeTitle": "欢迎来到 Eduhub",
+      "welcomeDesc": "提升您的学习技能。在一个地方访问作业、研究材料和教师反馈。",
+      "learnmore": "了解更多",
+      "allsubjcts": "所有科目",
+      "searchsubjects": "搜索科目...",
     },
     "Vietnamese": {
       "home": "Trang chủ",
@@ -75,6 +90,11 @@ class Localization {
       "email": "Email",
       "role": "Vai trò",
       "selectLanguage": "Chọn ngôn ngữ",
+      "welcomeTitle": "Chào mừng đến với Eduhub",
+      "welcomeDesc": "Nâng cao kỹ năng học tập của bạn. Truy cập bài tập về nhà, tài liệu nghiên cứu và phản hồi của giáo viên ở cùng một nơi.",
+      "learnmore": "Tìm hiểu thêm",
+      "allsubjcts": "Tất cả các môn học.",
+      "searchsubjects": "Tìm kiếm môn học...",
     }
   };
 
