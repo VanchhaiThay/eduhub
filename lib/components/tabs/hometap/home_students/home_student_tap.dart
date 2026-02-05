@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart'; // Required for Graphs
 import '../../../utils/localization.dart';
 
 class HomeStudentTab extends StatefulWidget {
@@ -86,7 +87,6 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
 
   @override
   Widget build(BuildContext context) {
-    // Detect if Dark Mode is active
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
@@ -101,10 +101,120 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
           const SizedBox(height: 20),
           _buildSubjectGrid(isDark),
           if (_searchQuery.isEmpty) _buildSeeMoreButton(),
+          
+          const SizedBox(height: 30),
+          _buildStatisticsSection(isDark),
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
+
+  // --- STATISTICS SECTION (PROGRESS & PIE) ---
+  Widget _buildStatisticsSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          Localization.text(widget.language, "learningProgress"),
+          style: TextStyle(
+            fontSize: 18, 
+            fontWeight: FontWeight.bold, 
+            color: isDark ? Colors.white : Colors.grey[800]
+          ),
+        ),
+        const SizedBox(height: 15),
+        
+        // Linear Progress Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[900] : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: isDark ? Border.all(color: Colors.white10) : null,
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Total Course Completion", 
+                    style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87)),
+                  const Text("75%", style: TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: 0.75,
+                  minHeight: 10,
+                  backgroundColor: const Color(0xFF38A39D).withOpacity(0.1),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38A39D)),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Pie Chart Card
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[900] : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: isDark ? Border.all(color: Colors.white10) : null,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 35,
+                    sections: [
+                      PieChartSectionData(value: 45, title: '45%', color: const Color(0xFF38A39D), radius: 45, titleStyle: _chartTextStyle()),
+                      PieChartSectionData(value: 30, title: '30%', color: Colors.amber, radius: 45, titleStyle: _chartTextStyle()),
+                      PieChartSectionData(value: 25, title: '25%', color: Colors.orangeAccent, radius: 45, titleStyle: _chartTextStyle()),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLegend(const Color(0xFF38A39D), "Homework", isDark),
+                  const SizedBox(height: 10),
+                  _buildLegend(Colors.amber, "Research", isDark),
+                  const SizedBox(height: 10),
+                  _buildLegend(Colors.orangeAccent, "Exams", isDark),
+                ],
+              )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  TextStyle _chartTextStyle() => const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white);
+
+  Widget _buildLegend(Color color, String text, bool isDark) {
+    return Row(
+      children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 8),
+        Text(text, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.black54)),
+      ],
+    );
+  }
+
+  // --- PRE-EXISTING UI METHODS ---
 
   Widget _buildSearchAndHeader(bool isDark) {
     return Column(
@@ -114,12 +224,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
           padding: const EdgeInsets.symmetric(horizontal: 4.0),
           child: Text(
             Localization.text(widget.language, "allsubjcts"),
-            style: TextStyle(
-              fontSize: 18, 
-              fontWeight: FontWeight.bold, 
-              // Adapts text color for light/dark
-              color: isDark ? Colors.white : Colors.grey[800],
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.grey[800]),
           ),
         ),
         const SizedBox(height: 12),
@@ -130,19 +235,10 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
             hintText: Localization.text(widget.language, "searchsubjects"),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: _searchQuery.isNotEmpty 
-                ? IconButton(
-                    icon: const Icon(Icons.clear), 
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = "");
-                    }) 
+                ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ""); }) 
                 : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none,
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
             filled: true,
-            // Darker fill for search bar in dark mode
             fillColor: isDark ? Colors.grey[900] : Colors.grey[200],
           ),
         ),
@@ -152,14 +248,10 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
 
   Widget _buildSubjectGrid(bool isDark) {
     final filteredList = _getFilteredSubjects();
-
     if (filteredList.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Text(
-          "No subjects found.",
-          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
-        ),
+        child: Text("No subjects found.", style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600])),
       );
     }
 
@@ -167,39 +259,21 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: filteredList.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.8,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 10),
       itemBuilder: (context, index) {
         return Column(
           children: [
             Container(
-              height: 65, width: 65,
-              decoration: BoxDecoration(
-                // Opacity remains 0.1, color matches brand teal
-                color: const Color(0xFF38A39D).withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                filteredList[index]['icon'],
-                color: const Color(0xFF38A39D),
-                size: 30,
-              ),
+              height: 60, width: 60,
+              decoration: BoxDecoration(color: const Color(0xFF38A39D).withOpacity(0.15), shape: BoxShape.circle),
+              child: Icon(filteredList[index]['icon'], color: const Color(0xFF38A39D), size: 28),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               Localization.text(widget.language, filteredList[index]['nameKey']),
-              style: TextStyle(
-                fontSize: 13, 
-                fontWeight: FontWeight.w600, 
-                color: isDark ? Colors.white70 : Colors.grey[800],
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.grey[800]),
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
           ],
         );
@@ -211,55 +285,30 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          // Adjust gradient for dark mode to be less blinding
-          colors: isDark 
-            ? [const Color(0xFF1E3A3A), const Color(0xFF2D4F4F)]
-            : [const Color(0xffACFBFF), const Color(0xffD8FEFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: isDark ? [const Color(0xFF1E3A3A), const Color(0xFF2D4F4F)] : [const Color(0xffACFBFF), const Color(0xffD8FEFF)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Localization.text(widget.language, "welcomeTitle"),
-                      style: TextStyle(
-                        fontSize: 20, 
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      Localization.text(widget.language, "welcomeDesc"),
-                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-                    ),
-                  ],
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(Localization.text(widget.language, "welcomeTitle"), style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                const SizedBox(height: 8),
+                Text(Localization.text(widget.language, "welcomeDesc"), style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black54)),
+                TextButton(
+                  onPressed: widget.onLearnMore,
+                  child: Text(Localization.text(widget.language, "learnmore"), style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold)),
                 ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Image.asset("assets/images/learning.png", height: 80),
-              ),
-            ],
-          ),
-          TextButton(
-            onPressed: widget.onLearnMore,
-            child: Text(
-              Localization.text(widget.language, "learnmore"),
-              style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold),
+              ],
             ),
           ),
+          Expanded(flex: 3, child: Image.asset("assets/images/learning.png", height: 80)),
         ],
       ),
     );
@@ -269,8 +318,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     return Column(
       children: [
         SizedBox(
-          height: 160,
-          width: double.infinity,
+          height: 150,
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (int page) => setState(() => _currentPage = page),
@@ -280,12 +328,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                 margin: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
-                  // Border for slider in dark mode helps it pop
-                  border: isDark ? Border.all(color: Colors.white10) : null,
-                  image: DecorationImage(
-                    image: AssetImage(sliderImages[index]),
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(image: AssetImage(sliderImages[index]), fit: BoxFit.cover),
                 ),
               );
             },
@@ -294,21 +337,12 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            sliderImages.length,
-            (index) => AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 8,
-              width: _currentPage == index ? 20 : 8,
-              decoration: BoxDecoration(
-                color: _currentPage == index 
-                    ? const Color(0xFF38A39D) 
-                    : (isDark ? Colors.white24 : Colors.grey.withOpacity(0.5)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
+          children: List.generate(sliderImages.length, (index) => AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            height: 8, width: _currentPage == index ? 18 : 8,
+            decoration: BoxDecoration(color: _currentPage == index ? const Color(0xFF38A39D) : Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10)),
+          )),
         ),
       ],
     );
@@ -320,16 +354,9 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            isExpanded 
-              ? Localization.text(widget.language, "seeLess") 
-              : Localization.text(widget.language, "seeMore"),
-            style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold),
-          ),
-          Icon(
-            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
-            color: const Color(0xFF38A39D)
-          ),
+          Text(isExpanded ? Localization.text(widget.language, "seeLess") : Localization.text(widget.language, "seeMore"), 
+               style: const TextStyle(color: Color(0xFF38A39D), fontWeight: FontWeight.bold)),
+          Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: const Color(0xFF38A39D)),
         ],
       ),
     );
