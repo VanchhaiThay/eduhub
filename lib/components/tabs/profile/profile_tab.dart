@@ -95,7 +95,7 @@ class ProfileTab extends StatelessWidget {
             const SizedBox(height: 30),
 
             // --- Details Card ---
-            _buildSectionTitle(Localization.text(selectedLanguage, 'accountDetails')),
+            _buildSectionTitle(Localization.text(selectedLanguage, Localization.text(selectedLanguage, 'accountDetails'))),
             _buildSettingsCard(context, [
               _infoRow(context, Icons.email_outlined, Localization.text(selectedLanguage, 'email'), email),
               _infoRow(context, Icons.person_outline, Localization.text(selectedLanguage, 'firstName'), firstName),
@@ -105,14 +105,14 @@ class ProfileTab extends StatelessWidget {
             const SizedBox(height: 25),
 
             // --- Preferences Card ---
-            _buildSectionTitle(Localization.text(selectedLanguage, 'preferences')),
+            _buildSectionTitle(Localization.text(selectedLanguage, Localization.text(selectedLanguage, 'preferences'))),
             _buildSettingsCard(context, [
               _buildLanguageDropdown(context),
               const Divider(height: 1),
               // --- DARK MODE TOGGLE ---
               SwitchListTile.adaptive(
                 secondary: Icon(Icons.dark_mode_outlined, color: Colors.blueGrey.shade400),
-                title: const Text("Dark Mode", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                title: Text(Localization.text(selectedLanguage, 'Dark Mode'), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 value: isDark,
                 // ignore: deprecated_member_use
                 activeColor: Colors.tealAccent,
@@ -130,7 +130,7 @@ class ProfileTab extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: () => _showLogoutDialog(context),
                 icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                label: const Text("Sign Out", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                label: Text(Localization.text(selectedLanguage, "Sign Out"), style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(double.infinity, 55),
                   // ignore: deprecated_member_use

@@ -6,7 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../auth/signin.dart';
 import '../main.dart'; // flutterLocalNotificationsPlugin
 import 'tabs/hometap/home_students/home_student_tap.dart';
-import 'tabs/hometap/home_teacher_tab.dart';
+import 'tabs/hometap/home_teacher/home_teacher_tab.dart';
 import 'tabs/coursetap/course_tab.dart';
 import 'tabs/classtap/class_teacher_tab.dart';
 import 'tabs/classtap/class_student_tab.dart';
@@ -353,7 +353,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: tabs[_selectedIndex],
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(20),
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
