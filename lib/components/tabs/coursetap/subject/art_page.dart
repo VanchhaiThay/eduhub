@@ -10,6 +10,9 @@ class ArtPage extends StatefulWidget {
 class _ArtPageState extends State<ArtPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(title: const Text('Art Page')),
+      body: const Center(child: Text('Welcome to the Art Page!')),
+    );
   }
 }

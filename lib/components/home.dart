@@ -202,7 +202,7 @@ class _HomePageState extends State<HomePage> {
               // This is the logic that switches the tab
               onLearnMore: () {
                 setState(() {
-                  _selectedIndex = 2; // Index of the Class Tab
+                  _selectedIndex = 1; // Index of the Class Tab
                 });
               },
             ),
@@ -392,14 +392,14 @@ class _HomePageState extends State<HomePage> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(
-                  Icons.school,
+                  Icons.book,
                   size: _selectedIndex == 1 ? 28 : 24,
                 ),
                 label: 'Course',
               ),
               BottomNavigationBarItem(
                 icon: Icon(
-                  Icons.book,
+                  Icons.school,
                   size: _selectedIndex == 2 ? 28 : 24,
                 ),
                 label: 'Class',

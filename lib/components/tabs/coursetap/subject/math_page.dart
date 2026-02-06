@@ -15,10 +15,7 @@ class _MathPageState extends State<MathPage> {
         title: const Text("Math"),
       ),
       body: const Center(
-        child: Text(
-          "Welcome to the Math page!",
-          style: TextStyle(fontSize: 24),
-        ),
+        
       ),
     );
   }
