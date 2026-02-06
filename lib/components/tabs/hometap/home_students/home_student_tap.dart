@@ -6,7 +6,7 @@ import 'package:eduhub/components/tabs/coursetap/subject/chemistry_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/english_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/geography_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/history_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/math_page.dart';
+import 'package:eduhub/components/tabs/coursetap/subject/math/math_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/khmer_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/physics_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/science_page.dart';
