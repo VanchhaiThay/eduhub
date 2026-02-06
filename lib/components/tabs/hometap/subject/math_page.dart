@@ -10,6 +10,16 @@ class MathPage extends StatefulWidget {
 class _MathPageState extends State<MathPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Math"),
+      ),
+      body: const Center(
+        child: Text(
+          "Welcome to the Math page!",
+          style: TextStyle(fontSize: 24),
+        ),
+      ),
+    );
   }
 }

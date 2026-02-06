@@ -7,7 +7,7 @@ import 'package:eduhub/components/tabs/hometap/subject/english_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/geography_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/history_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/math_page.dart';
-import 'package:eduhub/components/tabs/hometap/subject/music_page.dart';
+import 'package:eduhub/components/tabs/hometap/subject/khmer_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/physics_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/science_page.dart';
 import 'package:eduhub/components/tabs/hometap/subject/sports_page.dart';
@@ -96,7 +96,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     {"nameKey": "chemistry", "icon": Icons.biotech},
     {"nameKey": "biology", "icon": Icons.psychology},
     {"nameKey": "art", "icon": Icons.palette},
-    {"nameKey": "music", "icon": Icons.music_note},
+    {"nameKey": "khmer", "icon": Icons.translate},
     {"nameKey": "tech", "icon": Icons.computer},
     {"nameKey": "sports", "icon": Icons.sports_basketball},
   ];
@@ -112,7 +112,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     "chemistry": const ChemistryPage(),
     "biology": const BiologyPage(),
     "art": const ArtPage(),
-    "music": const MusicPage(),
+    "khmer": const KhmerPage(),
     "tech": const TechPage(),
     "sports": const SportsPage(),
   };
