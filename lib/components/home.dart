@@ -8,7 +8,7 @@ import '../main.dart'; // flutterLocalNotificationsPlugin
 import 'tabs/hometap/home_students/home_student_tap.dart';
 import 'tabs/hometap/home_teacher/home_teacher_tab.dart';
 import 'tabs/coursetap/course_tab.dart';
-import 'tabs/classtap/class_teacher_tab.dart';
+import 'tabs/classtap/classteacher/class_teacher_tab.dart';
 import 'tabs/classtap/class_student_tab.dart';
 import 'tabs/assignmentstap/assignment_teacher_tab.dart';
 import 'tabs/assignmentstap/assignment_student_tab.dart';
