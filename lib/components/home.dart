@@ -196,7 +196,14 @@ class _HomePageState extends State<HomePage> {
 
     final tabs = [
       role == 'teacher'
-          ? HomeTeacherTab(language: selectedLanguage)
+          ? HomeTeacherTab(
+            language: selectedLanguage,
+            onLearnMore: () {
+              setState(() {
+                _selectedIndex = 1; // Index of the Course Tab
+              });
+            },
+          )
           : HomeStudentTab(
               language: selectedLanguage,
               // This is the logic that switches the tab
