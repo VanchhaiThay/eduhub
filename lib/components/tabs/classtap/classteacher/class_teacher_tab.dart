@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:eduhub/components/tabs/classtap/classteacher/class_detail_page.dart';
 import 'package:eduhub/components/utils/localization.dart';
 
 class ClassTeacherTab extends StatefulWidget {
   final String language;
-
   const ClassTeacherTab({super.key, required this.language});
 
   @override
@@ -19,9 +17,8 @@ class ClassTeacherTab extends StatefulWidget {
 class _ClassTeacherTabState extends State<ClassTeacherTab> {
   final classNameController = TextEditingController();
   bool isLoading = false;
-  String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
-  // Primary brand color stays consistent
+  String? get uid => FirebaseAuth.instance.currentUser?.uid;
   final Color brandColor = const Color(0xFF38A39D);
 
   @override
@@ -31,9 +28,9 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   }
 
   // ================= LOGIC =================
-
   Future<void> createClass() async {
     if (uid == null) return;
+
     final name = classNameController.text.trim();
     if (name.isEmpty) {
       _showStatus("Please enter a class name", isError: true);
@@ -54,6 +51,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
         "studentCount": 0,
       });
 
+      // Global lookup
       await FirebaseFirestore.instance
           .collection("class_lookup")
           .doc(joinCode)
@@ -80,10 +78,12 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           .collection("classes")
           .doc(classId)
           .delete();
+
       await FirebaseFirestore.instance
           .collection("class_lookup")
           .doc(joinCode)
           .delete();
+
       _showStatus("Class deleted", isError: true);
     } catch (e) {
       _showStatus("Failed to delete", isError: true);
@@ -93,7 +93,10 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   String _generateJoinCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     return String.fromCharCodes(
-      Iterable.generate(6, (_) => chars.codeUnitAt(Random().nextInt(chars.length))),
+      Iterable.generate(
+        6,
+        (_) => chars.codeUnitAt(Random().nextInt(chars.length)),
+      ),
     );
   }
 
@@ -109,7 +112,6 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   }
 
   // ================= UI COMPONENTS =================
-
   void showCreateDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
@@ -159,11 +161,9 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
     if (uid == null) return const Center(child: Text("Authentication Required"));
 
     return Scaffold(
-      // scaffoldBackgroundColor automatically handles dark/light if theme is set
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showCreateDialog,
         backgroundColor: brandColor,
@@ -186,7 +186,6 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
               }
-
               final docs = snapshot.data?.docs ?? [];
               if (docs.isEmpty) return _buildEmptyState(theme);
 
@@ -257,10 +256,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
             ),
             child: Icon(Icons.school_rounded, color: brandColor),
           ),
-          title: Text(
-            name,
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
+          title: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Row(
@@ -291,10 +287,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
             onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text("Delete", style: TextStyle(color: Colors.redAccent)),
-              ),
+              const PopupMenuItem(value: 'delete', child: Text("Delete", style: TextStyle(color: Colors.redAccent))),
             ],
           ),
           onTap: () => Navigator.push(

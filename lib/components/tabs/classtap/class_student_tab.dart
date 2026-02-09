@@ -183,7 +183,7 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
         title: Text(
-          Localization.text(widget.language, "enrolledClasses") ?? "My Classes",
+          Localization.text(widget.language, "My Classes") ?? "My Classes",
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white),
         ),
       ),
@@ -201,6 +201,7 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
         border: isDark ? Border.all(color: Colors.white10) : null,
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: isDark ? Colors.transparent : Colors.black.withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
