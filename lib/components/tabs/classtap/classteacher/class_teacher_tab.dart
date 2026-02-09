@@ -222,15 +222,6 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           Localization.text(widget.language, "welcomeTitle"),
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white),
         ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [brandColor, brandColor.withOpacity(0.8)],
-            ),
-          ),
-        ),
       ),
     );
   }
