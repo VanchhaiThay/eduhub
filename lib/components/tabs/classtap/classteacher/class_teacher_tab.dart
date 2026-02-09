@@ -1,10 +1,11 @@
 import 'dart:math';
-import 'package:eduhub/components/tabs/classtap/classteacher/class_detail_page.dart';
-import 'package:eduhub/components/utils/localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:eduhub/components/tabs/classtap/classteacher/class_detail_page.dart';
+import 'package:eduhub/components/utils/localization.dart';
 
 class ClassTeacherTab extends StatefulWidget {
   final String language;
@@ -18,55 +19,60 @@ class ClassTeacherTab extends StatefulWidget {
 class _ClassTeacherTabState extends State<ClassTeacherTab> {
   final classNameController = TextEditingController();
   bool isLoading = false;
+  String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
-  String get uid => FirebaseAuth.instance.currentUser!.uid;
-  final Color primaryColor = const Color(0xFF38A39D);
+  // Primary brand color stays consistent
+  final Color brandColor = const Color(0xFF38A39D);
 
-  // --- Firebase Operations ---
+  @override
+  void dispose() {
+    classNameController.dispose();
+    super.dispose();
+  }
+
+  // ================= LOGIC =================
 
   Future<void> createClass() async {
-    if (classNameController.text.isEmpty) {
+    if (uid == null) return;
+    final name = classNameController.text.trim();
+    if (name.isEmpty) {
       _showStatus("Please enter a class name", isError: true);
       return;
     }
+
     setState(() => isLoading = true);
     try {
       final joinCode = _generateJoinCode();
-      await FirebaseFirestore.instance
+      final classRef = await FirebaseFirestore.instance
           .collection("users")
           .doc(uid)
           .collection("classes")
           .add({
-        "className": classNameController.text.trim(),
+        "className": name,
         "joinCode": joinCode,
-        "joinLink": "https://eduhub.app/join/$joinCode",
         "createdAt": Timestamp.now(),
         "studentCount": 0,
       });
-      classNameController.clear();
-      _showStatus("Class created successfully!");
-    } catch (e) {
-      _showStatus("Error: $e", isError: true);
-    }
-    setState(() => isLoading = false);
-  }
 
-  Future<void> updateClassName(String classId, String newName) async {
-    if (newName.isEmpty) return;
-    try {
       await FirebaseFirestore.instance
-          .collection("users")
-          .doc(uid)
-          .collection("classes")
-          .doc(classId)
-          .update({"className": newName.trim()});
-      _showStatus("Class updated!");
+          .collection("class_lookup")
+          .doc(joinCode)
+          .set({
+        "teacherId": uid,
+        "classId": classRef.id,
+        "className": name,
+      });
+
+      classNameController.clear();
+      _showStatus("Class '$name' created!");
     } catch (e) {
-      _showStatus("Update failed", isError: true);
+      _showStatus("Error creating class", isError: true);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  Future<void> deleteClass(String classId) async {
+  Future<void> deleteClass(String classId, String joinCode) async {
     try {
       await FirebaseFirestore.instance
           .collection("users")
@@ -74,120 +80,77 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           .collection("classes")
           .doc(classId)
           .delete();
+      await FirebaseFirestore.instance
+          .collection("class_lookup")
+          .doc(joinCode)
+          .delete();
       _showStatus("Class deleted", isError: true);
     } catch (e) {
-      _showStatus("Delete failed", isError: true);
+      _showStatus("Failed to delete", isError: true);
     }
   }
 
-  // --- UI Helpers ---
-
   String _generateJoinCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return String.fromCharCodes(Iterable.generate(
-        6, (_) => chars.codeUnitAt(Random().nextInt(chars.length))));
+    return String.fromCharCodes(
+      Iterable.generate(6, (_) => chars.codeUnitAt(Random().nextInt(chars.length))),
+    );
   }
 
   void _showStatus(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: isError ? Colors.redAccent : primaryColor,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        backgroundColor: isError ? Colors.redAccent : brandColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  // --- Dialogs ---
-
-  void showEditDialog(String classId, String currentName) {
-    classNameController.text = currentName;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Edit Class Name"),
-        content: _buildDialogField(classNameController, "Class Name", Icons.edit_outlined),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-            onPressed: () {
-              updateClassName(classId, classNameController.text);
-              Navigator.pop(context);
-              classNameController.clear();
-            },
-            child: const Text("Update", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showDeleteConfirmation(String classId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Class?"),
-        content: const Text("This action cannot be undone. All class data will be lost."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          TextButton(
-            onPressed: () {
-              deleteClass(classId);
-              Navigator.pop(context);
-            },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+  // ================= UI COMPONENTS =================
 
   void showCreateDialog() {
-    showGeneralDialog(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) => const SizedBox(),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return Transform.scale(
-          scale: anim1.value,
-          child: Opacity(
-            opacity: anim1.value,
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text("Create New Class", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-              content: _buildDialogField(classNameController, "Class Name", Icons.class_outlined),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    await createClass();
-                  },
-                  child: const Text("Create", style: TextStyle(color: Colors.white)),
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("New Class", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: classNameController,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Class Name",
+            hintText: "e.g. Science 101",
+            filled: true,
+            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDialogField(TextEditingController controller, String label, IconData icon) {
-    return TextField(
-      controller: controller,
-      textCapitalization: TextCapitalization.words,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: primaryColor),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel", style: TextStyle(color: Colors.grey[500])),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: brandColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              createClass();
+            },
+            child: const Text("Create"),
+          ),
+        ],
       ),
     );
   }
@@ -195,29 +158,23 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (uid == null) return const Center(child: Text("Authentication Required"));
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      // scaffoldBackgroundColor automatically handles dark/light if theme is set
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showCreateDialog,
-        backgroundColor: primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: brandColor,
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text("New Class", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            expandedHeight: 80.0,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(Localization.text(widget.language, "welcomeTitle"),
-                  style: const TextStyle(color: Color.fromARGB(255, 3, 0, 0), fontWeight: FontWeight.bold, fontSize: 18)),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [primaryColor, primaryColor.withOpacity(0.8)]),
-                ),
-              ),
-            ),
-          ),
+          _buildSliverAppBar(isDark),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("users")
@@ -229,16 +186,16 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
               }
-              var classes = snapshot.data?.docs ?? [];
-              if (classes.isEmpty) {
-                return const SliverFillRemaining(child: Center(child: Text("No classes yet")));
-              }
+
+              final docs = snapshot.data?.docs ?? [];
+              if (docs.isEmpty) return _buildEmptyState(theme);
+
               return SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildProfessionalClassCard(classes[index]),
-                    childCount: classes.length,
+                    (context, index) => _buildClassCard(docs[index], theme, isDark),
+                    childCount: docs.length,
                   ),
                 ),
               );
@@ -249,83 +206,28 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     );
   }
 
-  Widget _buildProfessionalClassCard(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: isDarkMode ? Colors.black26 : Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  Widget _buildSliverAppBar(bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 110,
+      pinned: true,
+      stretch: true,
+      backgroundColor: brandColor,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ClassDetailPage(className: data["className"], classId: doc.id),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.class_rounded, color: primaryColor),
-                      ),
-                      // --- Popup Menu for Edit/Delete ---
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            showEditDialog(doc.id, data["className"]);
-                          } else if (value == 'delete') {
-                            showDeleteConfirmation(doc.id);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
-                          const PopupMenuItem(value: 'delete', child: Text("Delete Class", style: TextStyle(color: Colors.red))),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    data["className"],
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
-                  ),
-                  Divider(height: 30, color: isDarkMode ? Colors.grey[800] : Colors.grey[200]),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMiniInfo(Icons.people_alt_outlined, "${data['studentCount'] ?? 0} Students"),
-                      _buildJoinBadge(data['joinCode'] ?? "N/A"),
-                    ],
-                  )
-                ],
-              ),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          Localization.text(widget.language, "welcomeTitle"),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white),
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [brandColor, brandColor.withOpacity(0.8)],
             ),
           ),
         ),
@@ -333,27 +235,109 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     );
   }
 
-  Widget _buildMiniInfo(IconData icon, String text) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-        const SizedBox(width: 5),
-        Text(text, style: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
-      ],
+  Widget _buildClassCard(DocumentSnapshot doc, ThemeData theme, bool isDark) {
+    final data = doc.data() as Map<String, dynamic>;
+    final name = data["className"] ?? "Unnamed Class";
+    final code = data["joinCode"] ?? "000000";
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.1), width: 1) : null,
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: brandColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(Icons.school_rounded, color: brandColor),
+          ),
+          title: Text(
+            name,
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    code,
+                    style: TextStyle(
+                      color: brandColor,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text("Long press to copy", style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: theme.hintColor),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text("Delete", style: TextStyle(color: Colors.redAccent)),
+              ),
+            ],
+          ),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ClassDetailPage(className: name, classId: doc.id)),
+          ),
+          onLongPress: () {
+            Clipboard.setData(ClipboardData(text: code));
+            HapticFeedback.mediumImpact();
+            _showStatus("Code copied!");
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildJoinBadge(String code) {
-    return GestureDetector(
-      onTap: () {
-        Clipboard.setData(ClipboardData(text: code));
-        _showStatus("Join code copied!");
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(8)),
-        child: Text("Code: $code", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+  Widget _buildEmptyState(ThemeData theme) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.library_books_rounded, size: 70, color: theme.hintColor.withOpacity(0.3)),
+          const SizedBox(height: 20),
+          Text(
+            "Ready to teach?",
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Create your first class to get started",
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+          ),
+        ],
       ),
     );
   }
