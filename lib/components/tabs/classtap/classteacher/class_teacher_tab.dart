@@ -16,6 +16,8 @@ class ClassTeacherTab extends StatefulWidget {
 
 class _ClassTeacherTabState extends State<ClassTeacherTab> {
   final classNameController = TextEditingController();
+  final searchController = TextEditingController(); // Controller for search
+  String searchQuery = ""; // String to store search input
   bool isLoading = false;
 
   String? get uid => FirebaseAuth.instance.currentUser?.uid;
@@ -24,13 +26,13 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
   @override
   void dispose() {
     classNameController.dispose();
+    searchController.dispose(); // Clean up
     super.dispose();
   }
 
   // ================= LOGIC =================
   Future<void> createClass() async {
     if (uid == null) return;
-
     final name = classNameController.text.trim();
     if (name.isEmpty) {
       _showStatus("Please enter a class name", isError: true);
@@ -47,11 +49,10 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           .add({
         "className": name,
         "joinCode": joinCode,
-        "createdAt": Timestamp.now(),
+        "createdAt": FieldValue.serverTimestamp(),
         "studentCount": 0,
       });
 
-      // Global lookup
       await FirebaseFirestore.instance
           .collection("class_lookup")
           .doc(joinCode)
@@ -135,15 +136,11 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: Colors.grey[500])),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: brandColor,
               foregroundColor: Colors.white,
-              elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
@@ -167,14 +164,47 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showCreateDialog,
         backgroundColor: brandColor,
-        elevation: 4,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text("New Class", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(isDark),
+          _buildSliverAppBar(),
+          
+          // --- SEARCH FIELD SECTION ---
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: TextField(
+                controller: searchController,
+                onChanged: (val) {
+                  setState(() {
+                    searchQuery = val.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: "Search your classes...",
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: searchQuery.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.clear), 
+                        onPressed: () {
+                          searchController.clear();
+                          setState(() => searchQuery = "");
+                        }) 
+                    : null,
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("users")
@@ -186,15 +216,28 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
               }
+
+              // Filter results based on search query
               final docs = snapshot.data?.docs ?? [];
+              final filteredDocs = docs.where((doc) {
+                final className = (doc.data() as Map<String, dynamic>)['className']?.toString().toLowerCase() ?? "";
+                return className.contains(searchQuery);
+              }).toList();
+
               if (docs.isEmpty) return _buildEmptyState(theme);
+              
+              if (filteredDocs.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(child: Text("No matching classes found.")),
+                );
+              }
 
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildClassCard(docs[index], theme, isDark),
-                    childCount: docs.length,
+                    (context, index) => _buildClassCard(filteredDocs[index], theme, isDark),
+                    childCount: filteredDocs.length,
                   ),
                 ),
               );
@@ -205,7 +248,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     );
   }
 
-  Widget _buildSliverAppBar(bool isDark) {
+  Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 110,
       pinned: true,
@@ -237,68 +280,35 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
         borderRadius: BorderRadius.circular(20),
         border: isDark ? Border.all(color: Colors.white.withOpacity(0.1), width: 1) : null,
         boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05),
+          if (!isDark) BoxShadow(
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: brandColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Icons.school_rounded, color: brandColor),
-          ),
-          title: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    code,
-                    style: TextStyle(
-                      color: brandColor,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text("Long press to copy", style: theme.textTheme.bodySmall),
-              ],
-            ),
-          ),
-          trailing: PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: theme.hintColor),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
-              const PopupMenuItem(value: 'delete', child: Text("Delete", style: TextStyle(color: Colors.redAccent))),
-            ],
-          ),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => ClassDetailPage(className: name, classId: doc.id)),
-          ),
-          onLongPress: () {
-            Clipboard.setData(ClipboardData(text: code));
-            HapticFeedback.mediumImpact();
-            _showStatus("Code copied!");
-          },
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: brandColor.withOpacity(0.1),
+          child: Icon(Icons.school_rounded, color: brandColor),
+        ),
+        title: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text("Code: $code", style: TextStyle(color: brandColor, fontWeight: FontWeight.bold)),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert_rounded, color: theme.hintColor),
+          onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
+            const PopupMenuItem(value: 'delete', child: Text("Delete", style: TextStyle(color: Colors.redAccent))),
+          ],
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ClassDetailPage(className: name, classId: doc.id)),
         ),
       ),
     );
@@ -312,15 +322,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
         children: [
           Icon(Icons.library_books_rounded, size: 70, color: theme.hintColor.withOpacity(0.3)),
           const SizedBox(height: 20),
-          Text(
-            "Ready to teach?",
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Create your first class to get started",
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-          ),
+          Text("No classes yet", style: theme.textTheme.titleLarge),
         ],
       ),
     );

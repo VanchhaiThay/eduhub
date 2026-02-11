@@ -4,10 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
 import 'welcome/welcome.dart';
-
 // Local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+    
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
