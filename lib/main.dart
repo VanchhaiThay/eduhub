@@ -2,6 +2,7 @@ import 'package:eduhub/components/utils/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'welcome/welcome.dart';
 // Local notifications plugin
@@ -32,7 +33,10 @@ Future<void> main() async {
       debugPrint('Notification tapped: ${response.payload}');
     },
   );
-  
+  await Supabase.initialize(
+    url: 'https://axvitflkhrfnoogcmbli.supabase.co',
+    anonKey: 'sb_publishable_RXJRgaWlTkLpxqKqLKyV4Q_nW7IMgFe', // Use your public anon key
+  );
   runApp(const MyApp());
 }
 
