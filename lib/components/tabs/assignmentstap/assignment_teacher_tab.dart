@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Added Firebase
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eduhub/components/tabs/assignmentstap/assignmentPreviewpage.dart';
 
 class QuestionData {
@@ -34,10 +34,12 @@ class AssignmentTeacherTab extends StatefulWidget {
 
 class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
   final _supabase = Supabase.instance.client;
-  final _firestore = FirebaseFirestore.instance; // Firebase Instance
-  final String _bucketName = 'eduhub_assignments';
+  final _firestore = FirebaseFirestore.instance;
+  
+  // MATCHED TO YOUR SCREENSHOT: 'assiment_photo'
+  final String _bucketName = 'assiment_photo'; 
+  
   final ImagePicker _picker = ImagePicker();
-
   final TextEditingController _titleController = TextEditingController();
   List<QuestionData> _questions = [];
   bool _isSaving = false;
@@ -57,12 +59,16 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
     super.dispose();
   }
 
-  // --- IMAGE METHODS (Using Supabase) ---
+  // --- IMAGE METHODS ---
 
   Future<void> _pickAndUploadImage(int questionIndex) async {
     final question = _questions[questionIndex];
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery, 
+        imageQuality: 70
+      );
+      
       if (image == null) return;
       
       setState(() {
@@ -70,8 +76,17 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
         question.isUploading = true;
       });
 
+      // Generate unique path: e.g., "q_1712345678.jpg"
       final String fileName = 'q_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await _supabase.storage.from(_bucketName).upload(fileName, File(image.path));
+
+      // Upload to Supabase Bucket
+      await _supabase.storage.from(_bucketName).upload(
+        fileName, 
+        File(image.path),
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
+
+      // Get the Public URL to save in Firestore later
       final String publicUrl = _supabase.storage.from(_bucketName).getPublicUrl(fileName);
 
       setState(() {
@@ -80,7 +95,9 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
       });
     } catch (e) {
       setState(() => question.isUploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Upload failed: $e"))
+      );
     }
   }
 
@@ -91,7 +108,7 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
     });
   }
 
-  // --- FIREBASE STORAGE LOGIC ---
+  // --- DATABASE LOGIC ---
 
   Future<void> _saveToFirebaseAndPreview() async {
     if (_titleController.text.isEmpty) {
@@ -110,7 +127,7 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
           return {
             'question_text': q.questionController.text,
             'type': q.selectedType,
-            'image_url': q.uploadedImageUrl ?? "",
+            'image_url': q.uploadedImageUrl ?? "", // Saves the Supabase Link
             'options': q.optionControllers.map((c) => c.text).toList(),
             'correct_answer': q.correctAnswer ?? "",
             'points': int.tryParse(q.pointsController.text) ?? 1,
@@ -118,18 +135,17 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
         }).toList(),
       };
 
-      // Store in Firestore
+      // Store assignment metadata and questions in Firestore
       DocumentReference docRef = await _firestore.collection('assignments').add(assignmentData);
 
       setState(() => _isSaving = false);
 
-      // Navigate to Preview
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => AssignmentPreviewPage(
-              data: {...assignmentData, 'id': docRef.id}, // Pass ID if needed
+              data: {...assignmentData, 'id': docRef.id},
               isTeacherPreview: true,
             ),
           ),
@@ -291,12 +307,21 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
                   flex: 3,
                   child: TextField(
                     controller: question.questionController,
-                    decoration: const InputDecoration(filled: true, fillColor: Color(0xFFF1F3F4), hintText: "Question", border: UnderlineInputBorder()),
+                    decoration: InputDecoration(
+                      filled: true, 
+                      fillColor: isDark ? Colors.white10 : const Color(0xFFF1F3F4), 
+                      hintText: "Question", 
+                      border: const UnderlineInputBorder()
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
+                // UPLOAD IMAGE BUTTON
                 IconButton(
-                  icon: Icon(question.uploadedImageUrl == null ? Icons.image_outlined : Icons.check_circle, color: question.uploadedImageUrl == null ? Colors.grey : Colors.green),
+                  icon: Icon(
+                    question.uploadedImageUrl == null ? Icons.image_outlined : Icons.check_circle, 
+                    color: question.uploadedImageUrl == null ? Colors.grey : Colors.green
+                  ),
                   onPressed: () => _pickAndUploadImage(qIndex),
                 ),
                 _buildDropdown(qIndex),
@@ -308,16 +333,27 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
               ],
             ),
             
+            // IMAGE PREVIEW AREA
             if (question.isUploading)
               const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
-            else if (question.selectedImage != null)
+            else if (question.uploadedImageUrl != null)
               Stack(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(question.selectedImage!, height: 150, width: double.infinity, fit: BoxFit.contain),
+                      child: Image.network(
+                        question.uploadedImageUrl!, 
+                        height: 200, 
+                        width: double.infinity, 
+                        fit: BoxFit.contain,
+                        // Shows local file as placeholder while network image loads
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
+                      ),
                     ),
                   ),
                   Positioned(
