@@ -5,10 +5,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'welcome/welcome.dart';
+
 // Local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
-    
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -16,16 +16,15 @@ Future<void> main() async {
   await ThemeManager.init();
 
   // 2. Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // 3. Initialize local notifications
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const InitializationSettings initSettings =
-      InitializationSettings(android: androidSettings);
+  const InitializationSettings initSettings = InitializationSettings(
+    android: androidSettings,
+  );
 
   await flutterLocalNotificationsPlugin.initialize(
     settings: initSettings,
@@ -33,9 +32,12 @@ Future<void> main() async {
       debugPrint('Notification tapped: ${response.payload}');
     },
   );
+
+  await ThemeManager.init();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Supabase.initialize(
-    url: 'https://axvitflkhrfnoogcmbli.supabase.co',
-    anonKey: 'sb_publishable_RXJRgaWlTkLpxqKqLKyV4Q_nW7IMgFe', // Use your public anon key
+    url: 'https://vfttstnwcbjcjshjgctr.supabase.co',
+    anonKey: 'sb_publishable_5v13RAGt6tPIe2RQQkdd3A_z_pggK_i',
   );
   runApp(const MyApp());
 }
@@ -52,10 +54,10 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'EduHub',
-          
+
           // Theme Configuration
-          themeMode: currentMode, 
-          
+          themeMode: currentMode,
+
           // Light Theme Data
           theme: ThemeData(
             useMaterial3: true,
@@ -67,7 +69,7 @@ class MyApp extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
           ),
-          
+
           // Dark Theme Data
           darkTheme: ThemeData(
             useMaterial3: true,
@@ -79,7 +81,7 @@ class MyApp extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
           ),
-          
+
           home: const WelcomePage(),
         );
       },

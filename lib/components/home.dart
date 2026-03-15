@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +8,7 @@ import 'tabs/hometap/home_students/home_student_tap.dart';
 import 'tabs/hometap/home_teacher/home_teacher_tab.dart';
 import 'tabs/coursetap/course_tab.dart';
 import 'tabs/classtap/classteacher/class_teacher_tab.dart';
-import 'tabs/classtap/class_student_tab.dart';
+import 'tabs/classtap/classstudents/class_student_tab.dart';
 import 'tabs/assignmentstap/assignment_teacher_tab.dart';
 import 'tabs/assignmentstap/assignment_student_tab.dart';
 import 'tabs/profile/profile_tab.dart';
@@ -32,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   String selectedLanguage = "English";
   bool isLoading = true;
 
-  File? profileImage;
+  String? photoUrl;
   List<Map<String, dynamic>> notifications = [];
 
   @override
@@ -52,15 +51,20 @@ class _HomePageState extends State<HomePage> {
         lastName = userData.lastName;
         email = userData.email;
         selectedLanguage = userData.language ?? "English";
+        photoUrl = user?.photoURL;
       });
 
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       final doc = await userRef.get();
 
       if (doc.exists) {
         final data = doc.data()!;
         notificationCount = (data['notificationCount'] ?? 0) as int;
-        notifications = List<Map<String, dynamic>>.from(data['notifications'] ?? []);
+        notifications = List<Map<String, dynamic>>.from(
+          data['notifications'] ?? [],
+        );
       }
 
       if (notificationCount == 0) {
@@ -71,8 +75,9 @@ class _HomePageState extends State<HomePage> {
     } else {
       setState(() => isLoading = false);
       // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Error loading user data")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Error loading user data")));
     }
   }
 
@@ -93,7 +98,7 @@ class _HomePageState extends State<HomePage> {
     };
 
     await userRef.update({
-      'notifications': FieldValue.arrayUnion([newNotification])
+      'notifications': FieldValue.arrayUnion([newNotification]),
     });
 
     setState(() {
@@ -143,10 +148,9 @@ class _HomePageState extends State<HomePage> {
 
     setState(() => notificationCount = 0);
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .update({'notificationCount': 0});
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'notificationCount': 0,
+    });
 
     showModalBottomSheet(
       // ignore: use_build_context_synchronously
@@ -175,7 +179,10 @@ class _HomePageState extends State<HomePage> {
                         return ListTile(
                           title: Text(notif['title'] ?? ""),
                           subtitle: Text(notif['body'] ?? ""),
-                          trailing: Text(dateStr, style: const TextStyle(fontSize: 10)),
+                          trailing: Text(
+                            dateStr,
+                            style: const TextStyle(fontSize: 10),
+                          ),
                         );
                       },
                     ),
@@ -197,13 +204,13 @@ class _HomePageState extends State<HomePage> {
     final tabs = [
       role == 'teacher'
           ? HomeTeacherTab(
-            language: selectedLanguage,
-            onLearnMore: () {
-              setState(() {
-                _selectedIndex = 1; // Index of the Course Tab
-              });
-            },
-          )
+              language: selectedLanguage,
+              onLearnMore: () {
+                setState(() {
+                  _selectedIndex = 1; // Index of the Course Tab
+                });
+              },
+            )
           : HomeStudentTab(
               language: selectedLanguage,
               // This is the logic that switches the tab
@@ -258,9 +265,10 @@ class _HomePageState extends State<HomePage> {
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor: Colors.white,
-                  backgroundImage:
-                      profileImage != null ? FileImage(profileImage!) : null,
-                  child: profileImage == null
+                  backgroundImage: photoUrl != null
+                      ? NetworkImage(photoUrl!)
+                      : null,
+                  child: photoUrl == null
                       ? Text(
                           "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
                           style: const TextStyle(
@@ -291,8 +299,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 2),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       // ignore: deprecated_member_use
                       color: Colors.white.withOpacity(0.15),
@@ -322,8 +332,11 @@ class _HomePageState extends State<HomePage> {
               children: [
                 IconButton(
                   onPressed: _showNotifications,
-                  icon: const Icon(Icons.notifications_none_rounded,
-                      color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 if (notificationCount > 0)
                   Positioned(
@@ -335,13 +348,16 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.redAccent,
                         shape: BoxShape.circle,
                         border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF1F1F1F)
-                                : const Color(0xFF38A39D),
-                            width: 1.5),
+                          color: isDark
+                              ? const Color(0xFF1F1F1F)
+                              : const Color(0xFF38A39D),
+                          width: 1.5,
+                        ),
                       ),
-                      constraints:
-                          const BoxConstraints(minWidth: 18, minHeight: 18),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
                       child: Text(
                         '$notificationCount',
                         style: const TextStyle(
@@ -391,24 +407,15 @@ class _HomePageState extends State<HomePage> {
             unselectedItemColor: Colors.grey,
             items: [
               BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.home,
-                  size: _selectedIndex == 0 ? 28 : 24,
-                ),
+                icon: Icon(Icons.home, size: _selectedIndex == 0 ? 28 : 24),
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.book,
-                  size: _selectedIndex == 1 ? 28 : 24,
-                ),
+                icon: Icon(Icons.book, size: _selectedIndex == 1 ? 28 : 24),
                 label: 'Course',
               ),
               BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.school,
-                  size: _selectedIndex == 2 ? 28 : 24,
-                ),
+                icon: Icon(Icons.school, size: _selectedIndex == 2 ? 28 : 24),
                 label: 'Class',
               ),
               BottomNavigationBarItem(
@@ -419,10 +426,7 @@ class _HomePageState extends State<HomePage> {
                 label: 'Assignments',
               ),
               BottomNavigationBarItem(
-                icon: Icon(
-                  Icons.person,
-                  size: _selectedIndex == 4 ? 28 : 24,
-                ),
+                icon: Icon(Icons.person, size: _selectedIndex == 4 ? 28 : 24),
                 label: 'Profile',
               ),
             ],

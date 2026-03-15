@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:eduhub/components/tabs/classtap/classteacher/class_detail_page.dart';
+import 'package:eduhub/components/tabs/classtap/class_detail_page.dart';
 import 'package:eduhub/components/utils/localization.dart';
 
 class ClassTeacherTab extends StatefulWidget {
