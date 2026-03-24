@@ -168,7 +168,9 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
           TextButton(
             onPressed: () {
               setState(() {
-                for (var q in _questions) q.dispose();
+                for (var q in _questions) {
+                  q.dispose();
+                }
                 _questions = [QuestionData()];
                 _titleController.clear();
               });

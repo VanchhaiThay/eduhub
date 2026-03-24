@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         lastName = userData.lastName;
         email = userData.email;
         selectedLanguage = userData.language ?? "English";
-        photoUrl = user?.photoURL;
+        photoUrl = user.photoURL;
       });
 
       final userRef = FirebaseFirestore.instance

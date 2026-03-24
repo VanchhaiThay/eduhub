@@ -105,7 +105,7 @@ class _ProfileTabState extends State<ProfileTab> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Profile image updated successfully! (Attempt $attempt/${maxRetries})",
+                "Profile image updated successfully! (Attempt $attempt/$maxRetries)",
               ),
               backgroundColor: Colors.teal,
             ),
@@ -419,12 +419,13 @@ class _ProfileTabState extends State<ProfileTab> {
           TextButton(
             onPressed: () async {
               await auth.FirebaseAuth.instance.signOut();
-              if (mounted)
+              if (mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                   (route) => false,
                 );
+              }
             },
             child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),

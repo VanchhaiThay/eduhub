@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
 
 class AssignmentPreviewPage extends StatefulWidget {
@@ -42,7 +42,8 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
       });
 
       final String assignmentId = docRef.id;
-      final String shareableLink = "https://eduhub.app/lib/components/tabs/assignmentstap/assignmentPreviewpage.dart/$assignmentId";
+      final String shareableLink =
+          "https://eduhub.app/assignment/$assignmentId";
 
       if (mounted) {
         _showLinkDialog(shareableLink);
@@ -50,7 +51,10 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Firebase Error: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Firebase Error: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -75,7 +79,9 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Your assignment is live. Copy the link below to share with students:"),
+            const Text(
+              "Your assignment is live. Copy the link below to share with students:",
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -86,7 +92,11 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
               ),
               child: SelectableText(
                 link,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
               ),
             ),
           ],
@@ -106,7 +116,9 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
               Navigator.pop(context); // Close Dialog
               Navigator.pop(context); // Go back to Creation screen
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF38A39D)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF38A39D),
+            ),
             child: const Text("DONE", style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -127,7 +139,10 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
 
     if (!allAnswered) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please answer all questions"), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text("Please answer all questions"),
+          backgroundColor: Colors.orange,
+        ),
       );
     } else {
       setState(() => _showResults = true);
@@ -141,7 +156,9 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF0EBF8),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF0EBF8),
       appBar: AppBar(
         title: Text(widget.isTeacherPreview ? "Teacher Preview" : "Assignment"),
         backgroundColor: const Color(0xFF38A39D),
@@ -151,17 +168,24 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
             Padding(
               padding: const EdgeInsets.only(right: 12.0),
               child: Center(
-                child: _isPublishing 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : ElevatedButton.icon(
-                      onPressed: _publishAssignment,
-                      icon: const Icon(Icons.send, size: 18),
-                      label: const Text("PUBLISH"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF38A39D),
+                child: _isPublishing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _publishAssignment,
+                        icon: const Icon(Icons.send, size: 18),
+                        label: const Text("PUBLISH"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF38A39D),
+                        ),
                       ),
-                    ),
               ),
             ),
         ],
@@ -175,12 +199,13 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
               children: [
                 _buildTitleHeader(title, isDark),
                 const SizedBox(height: 16),
-                if (_showResults && !widget.isTeacherPreview) _buildSuccessBanner(),
+                if (_showResults && !widget.isTeacherPreview)
+                  _buildSuccessBanner(),
                 ...questions.asMap().entries.map((entry) {
                   return _buildInteractiveCard(entry.value, entry.key, isDark);
-                }).toList(),
+                }),
                 const SizedBox(height: 24),
-                
+
                 if (!_showResults)
                   SizedBox(
                     width: double.infinity,
@@ -189,9 +214,14 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF38A39D),
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text("TEST SUBMISSION", style: TextStyle(color: Colors.white, fontSize: 16)),
+                      child: const Text(
+                        "TEST SUBMISSION",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 40),
@@ -218,7 +248,10 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
         children: [
           Icon(Icons.check_circle, color: Colors.green),
           SizedBox(width: 12),
-          Text("Submission Successful!", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+          Text(
+            "Submission Successful!",
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -227,7 +260,9 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
   Widget _buildInteractiveCard(Map q, int index, bool isDark) {
     String type = q['type'] ?? 'Multiple Choice';
     int points = q['points'] ?? 1;
-    bool isCorrect = _userAnswers[index]?.trim().toLowerCase() == q['correct_answer']?.toString().toLowerCase();
+    bool isCorrect =
+        _userAnswers[index]?.trim().toLowerCase() ==
+        q['correct_answer']?.toString().toLowerCase();
 
     return Container(
       width: double.infinity,
@@ -236,8 +271,8 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: (_showResults && widget.isTeacherPreview) 
-            ? Border.all(color: isCorrect ? Colors.green : Colors.red, width: 2) 
+        border: (_showResults && widget.isTeacherPreview)
+            ? Border.all(color: isCorrect ? Colors.green : Colors.red, width: 2)
             : null,
       ),
       child: Column(
@@ -246,44 +281,81 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: Text(q['question_text'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500))),
+              Expanded(
+                child: Text(
+                  q['question_text'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.blueGrey.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text("$points pts", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  "$points pts",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
           if (q['image_url'] != null && q['image_url'].isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
-              child: Image.network(q['image_url'], height: 250, fit: BoxFit.contain),
+              child: Image.network(
+                q['image_url'],
+                height: 250,
+                fit: BoxFit.contain,
+              ),
             ),
           const SizedBox(height: 16),
           if (type == 'Multiple Choice')
-            ...List.generate(q['options'].length, (i) => RadioListTile<String>(
-              title: Text(q['options'][i]),
-              value: q['options'][i],
-              // ignore: deprecated_member_use
-              groupValue: _userAnswers[index],
-              activeColor: const Color(0xFF38A39D),
-              // ignore: deprecated_member_use
-              onChanged: _showResults ? null : (v) => setState(() => _userAnswers[index] = v!),
-            ))
+            ...List.generate(
+              q['options'].length,
+              (i) => RadioListTile<String>(
+                title: Text(q['options'][i]),
+                value: q['options'][i],
+                // ignore: deprecated_member_use
+                groupValue: _userAnswers[index],
+                activeColor: const Color(0xFF38A39D),
+                // ignore: deprecated_member_use
+                onChanged: _showResults
+                    ? null
+                    : (v) => setState(() => _userAnswers[index] = v!),
+              ),
+            )
           else
             TextField(
-              controller: _controllers.putIfAbsent(index, () => TextEditingController()),
+              controller: _controllers.putIfAbsent(
+                index,
+                () => TextEditingController(),
+              ),
               enabled: !_showResults,
               onChanged: (v) => _userAnswers[index] = v,
-              decoration: const InputDecoration(hintText: "Your answer", border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                hintText: "Your answer",
+                border: OutlineInputBorder(),
+              ),
             ),
-          
+
           if (_showResults && widget.isTeacherPreview)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                isCorrect ? "Correct!" : "Incorrect. Key: ${q['correct_answer']}",
-                style: TextStyle(color: isCorrect ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                isCorrect
+                    ? "Correct!"
+                    : "Incorrect. Key: ${q['correct_answer']}",
+                style: TextStyle(
+                  color: isCorrect ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
@@ -298,9 +370,14 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: const Border(top: BorderSide(color: Color(0xFF38A39D), width: 10)),
+        border: const Border(
+          top: BorderSide(color: Color(0xFF38A39D), width: 10),
+        ),
       ),
-      child: Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
