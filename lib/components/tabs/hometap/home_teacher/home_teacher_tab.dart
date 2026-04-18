@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:eduhub/components/tabs/coursetap/subject/art_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/biology_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/chemistry_page.dart';
@@ -14,42 +13,9 @@ import 'package:eduhub/components/tabs/coursetap/subject/sports_page.dart';
 import 'package:eduhub/components/tabs/coursetap/subject/tech_page.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import '../../../utils/localization.dart';
-
-// --- NEWS SERVICE ---
-class NewsService {
-  final String _apiKey = "pub_73c66af2943a48d1b292611f9280af07";
-
-  // Fetch general education news in Cambodia
-  Future<List<dynamic>> fetchCambodiaNews() async {
-    final url =
-        "https://newsdata.io/api/1/news?apikey=$_apiKey&country=kh&category=education";
-    return _handleFetch(url);
-  }
-
-  // Fetch global/Cambodian scholarship news
-  Future<List<dynamic>> fetchScholarships() async {
-    // We use 'q=scholarship' to specifically target financial aid opportunities
-    final url =
-        "https://newsdata.io/api/1/news?apikey=$_apiKey&q=scholarship&language=en";
-    return _handleFetch(url);
-  }
-
-  Future<List<dynamic>> _handleFetch(String url) async {
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['results'] ?? [];
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  }
-}
+import '../../../../utils/localization.dart';
+import 'package:eduhub/services/news_service.dart';
 
 class HomeTeacherTab extends StatefulWidget {
   final String language;
@@ -78,6 +44,8 @@ class _HomeTeacherTabState extends State<HomeTeacherTab> {
   List<dynamic> _scholarshipList = []; // Added for scholarships
   bool _isLoadingNews = true;
   bool _isLoadingScholarships = true; // Added for scholarships
+  String? _newsError;
+  String? _scholarshipError;
 
   final List<String> sliderImages = [
     "assets/images/slide1.png",
@@ -129,13 +97,22 @@ class _HomeTeacherTabState extends State<HomeTeacherTab> {
     setState(() {
       _isLoadingNews = true;
       _isLoadingScholarships = true;
+      _newsError = null;
+      _scholarshipError = null;
     });
 
-    // Fetch both in parallel
-    final results = await Future.wait([
-      NewsService().fetchCambodiaNews(),
-      NewsService().fetchScholarships(),
-    ]);
+    final service = NewsService();
+
+    final newsFuture = service.fetchCambodiaNews().catchError((e) {
+      _newsError = e.toString();
+      return <dynamic>[];
+    });
+    final scholarFuture = service.fetchScholarships().catchError((e) {
+      _scholarshipError = e.toString();
+      return <dynamic>[];
+    });
+
+    final results = await Future.wait([newsFuture, scholarFuture]);
 
     if (mounted) {
       setState(() {
@@ -184,21 +161,20 @@ class _HomeTeacherTabState extends State<HomeTeacherTab> {
     super.dispose();
   }
 
-List<Map<String, dynamic>> _getFilteredSubjects() {
-  if (_searchQuery.isEmpty) {
-    return isExpanded ? subjects : subjects.take(6).toList();
+  List<Map<String, dynamic>> _getFilteredSubjects() {
+    if (_searchQuery.isEmpty) {
+      return isExpanded ? subjects : subjects.take(6).toList();
+    }
+
+    return subjects.where((subject) {
+      String localizedName = Localization.text(
+        widget.language,
+        subject['nameKey'],
+      ).toLowerCase();
+
+      return localizedName.contains(_searchQuery.toLowerCase());
+    }).toList();
   }
-
-  return subjects.where((subject) {
-    String localizedName = Localization.text(
-      widget.language,
-      subject['nameKey'],
-    ).toLowerCase();
-
-    return localizedName.contains(_searchQuery.toLowerCase());
-  }).toList();
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -254,18 +230,22 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
         _isLoadingScholarships
             ? const Center(child: CircularProgressIndicator())
             : _scholarshipList.isEmpty
-            ? const Text("No scholarship updates available.")
-            : SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _scholarshipList.take(6).length,
-                  itemBuilder: (context, index) {
-                    final item = _scholarshipList[index];
-                    return _buildScholarshipCard(item, isDark);
-                  },
-                ),
-              ),
+                ? _buildEmptyState(
+                    _scholarshipError != null
+                        ? "Couldn't load scholarships. Tap to retry."
+                        : "No scholarship updates available. Tap to retry.",
+                  )
+                : SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _scholarshipList.take(6).length,
+                      itemBuilder: (context, index) {
+                        final item = _scholarshipList[index];
+                        return _buildScholarshipCard(item, isDark);
+                      },
+                    ),
+                  ),
       ],
     );
   }
@@ -281,9 +261,8 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
           color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: const Color(0xFF38A39D).withOpacity(0.3)),
-          boxShadow: isDark
-              ? []
-              : [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          boxShadow:
+              isDark ? [] : [BoxShadow(color: Colors.black12, blurRadius: 5)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +339,10 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    Localization.text(widget.language, "Total Course Completion"),
+                    Localization.text(
+                      widget.language,
+                      "Total Course Completion",
+                    ),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white70 : Colors.black87,
@@ -437,11 +419,23 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLegend(const Color(0xFF38A39D),   Localization.text(widget.language, "lessons"), isDark),
+                  _buildLegend(
+                    const Color(0xFF38A39D),
+                    Localization.text(widget.language, "lessons"),
+                    isDark,
+                  ),
                   const SizedBox(height: 10),
-                  _buildLegend(Colors.amber,   Localization.text(widget.language, "Time"), isDark),
+                  _buildLegend(
+                    Colors.amber,
+                    Localization.text(widget.language, "Time"),
+                    isDark,
+                  ),
                   const SizedBox(height: 10),
-                  _buildLegend(Colors.orangeAccent,   Localization.text(widget.language, "Others"), isDark),
+                  _buildLegend(
+                    Colors.orangeAccent,
+                    Localization.text(widget.language, "Others"),
+                    isDark,
+                  ),
                 ],
               ),
             ],
@@ -509,21 +503,25 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
                 ),
               )
             : _newsList.isEmpty
-            ? const Text("No recent news found for Cambodia.")
-            : Column(
-                children: _newsList.take(5).map((news) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildNewsTile(
-                      news['title'] ?? "No Title",
-                      news['pubDate'] ?? "Today",
-                      news['image_url'],
-                      news['link'],
-                      isDark,
-                    ),
-                  );
-                }).toList(),
-              ),
+                ? _buildEmptyState(
+                    _newsError != null
+                        ? "Couldn't load news. Tap to retry."
+                        : "No recent news found for Cambodia. Tap to retry.",
+                  )
+                : Column(
+                    children: _newsList.take(5).map((news) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildNewsTile(
+                          news['title'] ?? "No Title",
+                          news['pubDate'] ?? "Today",
+                          news['image_url'],
+                          news['link'],
+                          isDark,
+                        ),
+                      );
+                    }).toList(),
+                  ),
       ],
     );
   }
@@ -633,11 +631,48 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
     );
   }
 
+  Widget _buildEmptyState(String message) {
+    return InkWell(
+      onTap: _loadAllData,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF38A39D).withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFF38A39D).withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.refresh,
+              size: 18,
+              color: Color(0xFF38A39D),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF38A39D),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   TextStyle _chartTextStyle() => const TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  );
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      );
 
   Widget _buildLegend(Color color, String text, bool isDark) {
     return Row(
@@ -690,65 +725,61 @@ List<Map<String, dynamic>> _getFilteredSubjects() {
     );
   }
 
-Widget _buildSubjectGrid(bool isDark) {
-  final filteredList = _getFilteredSubjects();
+  Widget _buildSubjectGrid(bool isDark) {
+    final filteredList = _getFilteredSubjects();
 
-  return GridView.builder(
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    itemCount: filteredList.length,
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 3,
-      mainAxisSpacing: 10,
-      mainAxisExtent: 95,
-    ),
-    itemBuilder: (context, index) {
-      final subject = filteredList[index];
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: filteredList.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        mainAxisExtent: 95,
+      ),
+      itemBuilder: (context, index) {
+        final subject = filteredList[index];
 
-      return InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          final page = subjectRoutes[subject['nameKey']];
-          if (page != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => page),
-            );
-          }
-        },
-        child: Column(
-          children: [
-            Container(
-              height: 60,
-              width: 60,
-              decoration: BoxDecoration(
-                color: const Color(0xFF38A39D).withOpacity(0.15),
-                shape: BoxShape.circle,
+        return InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            final page = subjectRoutes[subject['nameKey']];
+            if (page != null) {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+            }
+          },
+          child: Column(
+            children: [
+              Container(
+                height: 60,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38A39D).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  subject['icon'],
+                  color: const Color(0xFF38A39D),
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                subject['icon'],
-                color: const Color(0xFF38A39D),
-                size: 28,
+              const SizedBox(height: 6),
+              Text(
+                Localization.text(widget.language, subject['nameKey']),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white70 : Colors.grey[800],
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              Localization.text(widget.language, subject['nameKey']),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : Colors.grey[800],
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildWelcomeCard(bool isDark) {
     return Container(
@@ -852,7 +883,9 @@ Widget _buildSubjectGrid(bool isDark) {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            isExpanded ? Localization.text(widget.language, "seeless") : Localization.text(widget.language, "seemore"),
+            isExpanded
+                ? Localization.text(widget.language, "seeless")
+                : Localization.text(widget.language, "seemore"),
             style: const TextStyle(color: Color(0xFF38A39D)),
           ),
           Icon(

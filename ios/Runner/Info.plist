@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>EduHub needs access to your camera so you can take a profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>EduHub needs access to your photo library so you can choose a profile photo.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>EduHub may use the microphone for voice notes in lessons.</string>
 </dict>
 </plist>

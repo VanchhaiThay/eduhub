@@ -1,8 +1,10 @@
-import 'package:eduhub/components/utils/theme_manager.dart';
+import 'package:eduhub/utils/theme_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'welcome/welcome.dart';
 
@@ -12,13 +14,21 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Initialize Theme Preference
+  // 1. Load environment variables FIRST (needed by NewsService + Supabase)
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint('[main] .env loaded. keys: ${dotenv.env.keys.toList()}');
+  } catch (e) {
+    debugPrint('[main] Failed to load .env: $e');
+  }
+
+  // 2. Initialize Theme Preference
   await ThemeManager.init();
 
-  // 2. Initialize Firebase
+  // 3. Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // 3. Initialize local notifications
+  // 4. Initialize local notifications
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -33,12 +43,15 @@ Future<void> main() async {
     },
   );
 
-  await ThemeManager.init();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await Supabase.initialize(
-    url: 'https://vfttstnwcbjcjshjgctr.supabase.co',
-    anonKey: 'sb_publishable_5v13RAGt6tPIe2RQQkdd3A_z_pggK_i',
-  );
+  // 5. Initialize Supabase (guarded so missing env doesn't crash the app)
+  final supaUrl = dotenv.env['SUPABASE_URL'];
+  final supaKey = dotenv.env['SUPABASE_ANON_KEY'];
+  if (supaUrl != null && supaKey != null) {
+    await Supabase.initialize(url: supaUrl, anonKey: supaKey);
+  } else {
+    debugPrint('[main] Supabase env missing - skipping Supabase.initialize');
+  }
+
   runApp(const MyApp());
 }
 

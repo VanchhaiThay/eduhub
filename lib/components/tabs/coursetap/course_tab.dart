@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/localization.dart';
+import '../../../utils/localization.dart';
 
 // --- Subject Page Imports ---
 import 'package:eduhub/components/tabs/coursetap/subject/art_page.dart';
@@ -29,6 +29,7 @@ class _CourseTabState extends State<CourseTab> {
   List<Map<String, dynamic>> _filteredSubjects = [];
 
   final List<Map<String, dynamic>> _allSubjects = [
+    {"nameKey": "khmer", "icon": Icons.language_rounded, "color": Colors.deepPurple},
     {"nameKey": "math", "icon": Icons.calculate_rounded, "color": Colors.blue},
     {"nameKey": "science", "icon": Icons.science_rounded, "color": Colors.green},
     {"nameKey": "history", "icon": Icons.history_edu_rounded, "color": Colors.brown},
@@ -38,7 +39,6 @@ class _CourseTabState extends State<CourseTab> {
     {"nameKey": "chemistry", "icon": Icons.biotech_rounded, "color": Colors.teal},
     {"nameKey": "biology", "icon": Icons.psychology_rounded, "color": Colors.lightGreen},
     {"nameKey": "art", "icon": Icons.palette_rounded, "color": Colors.pink},
-    {"nameKey": "khmer", "icon": Icons.language_rounded, "color": Colors.deepPurple},
     {"nameKey": "tech", "icon": Icons.computer_rounded, "color": Colors.blueGrey},
     {"nameKey": "sports", "icon": Icons.sports_basketball_rounded, "color": Colors.redAccent},
   ];
@@ -110,33 +110,6 @@ class _CourseTabState extends State<CourseTab> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark ? [Colors.teal.shade900, Colors.black] : [Colors.teal.shade700, Colors.teal.shade400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, color: Colors.white, size: 35),
-                ),
-                const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text("Student Name", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text("Grade 12 - A", style: TextStyle(color: Colors.white70, fontSize: 13)),
-                  ],
-                )
-              ],
-            ),
-          ),
           _drawerItem(Icons.book_rounded, "Courses", 0, isDark),
           _drawerItem(Icons.local_library_rounded, "Library", 1, isDark),
           const Spacer(),

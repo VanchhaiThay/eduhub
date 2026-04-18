@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/localization.dart';
+import '../../../utils/localization.dart';
 
 class AssignmentStudentTab extends StatelessWidget {
   final String language;

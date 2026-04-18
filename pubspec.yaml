@@ -37,6 +37,7 @@ dependencies:
   record: ^6.2.0
   audioplayers: ^6.6.0
   chewie: ^1.13.0
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -52,14 +53,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/logo.png
-    - assets/images/learning.png
-    - assets/images/login.png
-    - assets/images/signup.png
-    - assets/images/slide1.png
-    - assets/images/slide2.png
-    - assets/images/slide3.png
-    - assets/images/example.mp4
+    - assets/images/
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

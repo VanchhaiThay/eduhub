@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eduhub/components/tabs/classtap/class_detail_page.dart';
-import 'package:eduhub/components/utils/localization.dart';
+import 'package:eduhub/utils/localization.dart';
 
 class ClassStudentTab extends StatefulWidget {
   final String language;

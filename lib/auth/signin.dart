@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../components/home.dart';
+import '../components/home/home.dart';
 import '../main.dart';
 
 class LoginPage extends StatefulWidget {
