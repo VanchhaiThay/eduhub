@@ -39,7 +39,7 @@ class LogoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TextButton.icon(
         onPressed: () => _showLogoutDialog(context),
         icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),

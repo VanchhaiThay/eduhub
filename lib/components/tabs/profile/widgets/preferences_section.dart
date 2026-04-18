@@ -17,7 +17,7 @@ class PreferencesSection extends StatelessWidget {
 
   Widget _buildSectionTitle(String title, {required BuildContext context}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(
@@ -34,7 +34,7 @@ class PreferencesSection extends StatelessWidget {
 
   Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 25),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
