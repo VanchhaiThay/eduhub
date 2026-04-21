@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../feature/hometap/home_students/home_student_tap.dart';
 import '../feature/hometap/home_teacher/home_teacher_tab.dart';
-import '../feature/coursetap/course_tab.dart';
+import '../feature/coursetap/widgets/course_tab.dart';
 import '../feature/classtap/classteacher/class_teacher_tab.dart';
 import '../feature/classtap/classstudents/class_student_tab.dart';
 import '../feature/assignmentstap/assignment_teacher_tab.dart';

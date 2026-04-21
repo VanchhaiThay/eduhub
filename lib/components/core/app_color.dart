@@ -26,6 +26,39 @@ class AppColors {
   }
 }
 
+class SubjectColors {
+  static const List<Map<String, dynamic>> subjects = [
+    {"nameKey": "khmer", "icon": Icons.language_rounded, "color": Colors.deepPurple},
+    {"nameKey": "math", "icon": Icons.calculate_rounded, "color": Colors.blue},
+    {"nameKey": "science", "icon": Icons.science_rounded, "color": Colors.green},
+    {"nameKey": "history", "icon": Icons.history_edu_rounded, "color": Colors.brown},
+    {"nameKey": "english", "icon": Icons.translate_rounded, "color": Colors.orange},
+    {"nameKey": "geography", "icon": Icons.public_rounded, "color": Colors.cyan},
+    {"nameKey": "physics", "icon": Icons.wb_iridescent_rounded, "color": Colors.indigo},
+    {"nameKey": "chemistry", "icon": Icons.biotech_rounded, "color": Colors.teal},
+    {"nameKey": "biology", "icon": Icons.psychology_rounded, "color": Colors.lightGreen},
+    {"nameKey": "art", "icon": Icons.palette_rounded, "color": Colors.pink},
+    {"nameKey": "tech", "icon": Icons.computer_rounded, "color": Colors.blueGrey},
+    {"nameKey": "sports", "icon": Icons.sports_basketball_rounded, "color": Colors.redAccent},
+  ];
+
+  static Color getColor(String nameKey) {
+    final subject = subjects.firstWhere(
+      (s) => s['nameKey'] == nameKey,
+      orElse: () => {'color': Colors.grey},
+    );
+    return subject['color'];
+  }
+
+  static IconData getIcon(String nameKey) {
+    final subject = subjects.firstWhere(
+      (s) => s['nameKey'] == nameKey,
+      orElse: () => {'icon': Icons.school},
+    );
+    return subject['icon'];
+  }
+}
+
 class GradeColors {
   static const List<Map<String, dynamic>> grades = [
     {'title': 'Grade 1', 'color': Colors.redAccent, 'icon': Icons.filter_1},
