@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import '../../../utils/localization.dart';
 
 // --- Subject Page Imports ---
-import 'package:eduhub/components/tabs/coursetap/subject/art_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/biology_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/chemistry_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/english_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/geography_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/history_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/math/math_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/khmer_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/physics_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/science_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/sports_page.dart';
-import 'package:eduhub/components/tabs/coursetap/subject/tech_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/art_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/biology_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/chemistry_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/english_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/geography_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/history_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/math/math_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/khmer_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/physics_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/science_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/sports_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/tech_page.dart';
 
 class CourseTab extends StatefulWidget {
   final String selectedLanguage;

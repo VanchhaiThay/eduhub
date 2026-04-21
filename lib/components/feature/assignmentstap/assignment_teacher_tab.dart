@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:eduhub/components/tabs/assignmentstap/assignmentPreviewpage.dart';
+import 'package:eduhub/components/feature/assignmentstap/assignmentPreviewpage.dart';
 
 class QuestionData {
   TextEditingController questionController = TextEditingController();

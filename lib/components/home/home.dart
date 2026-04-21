@@ -3,14 +3,14 @@ import 'package:eduhub/components/home/widgets/bottom_nav_bar.dart';
 import 'package:eduhub/components/home/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../tabs/hometap/home_students/home_student_tap.dart';
-import '../tabs/hometap/home_teacher/home_teacher_tab.dart';
-import '../tabs/coursetap/course_tab.dart';
-import '../tabs/classtap/classteacher/class_teacher_tab.dart';
-import '../tabs/classtap/classstudents/class_student_tab.dart';
-import '../tabs/assignmentstap/assignment_teacher_tab.dart';
-import '../tabs/assignmentstap/assignment_student_tab.dart';
-import '../tabs/profile/profile_tab.dart';
+import '../feature/hometap/home_students/home_student_tap.dart';
+import '../feature/hometap/home_teacher/home_teacher_tab.dart';
+import '../feature/coursetap/course_tab.dart';
+import '../feature/classtap/classteacher/class_teacher_tab.dart';
+import '../feature/classtap/classstudents/class_student_tab.dart';
+import '../feature/assignmentstap/assignment_teacher_tab.dart';
+import '../feature/assignmentstap/assignment_student_tab.dart';
+import '../feature/profile/profile_tab.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required int initialNotification});

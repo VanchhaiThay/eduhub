@@ -43,15 +43,6 @@
                 <data android:host="eduhub.app" />
                 <data android:pathPrefix="/assignment" />
             </intent-filter>
-            <intent-filter android:autoVerify="false">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                
-                <data android:scheme="https" android:host="eduhub.app" />
-                <data android:host="eduhub.app" />
-                <data android:pathPrefix="/assignment" />
-            </intent-filter>
         </activity>
         
         <meta-data
