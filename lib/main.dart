@@ -1,5 +1,4 @@
 import 'package:eduhub/utils/theme_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -60,7 +59,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 4. Wrap MaterialApp with ValueListenableBuilder to listen for theme changes
+    //4.Wrap MaterialApp with ValueListenableBuilder to listen for theme changes
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeManager.themeMode,
       builder: (context, currentMode, child) {
