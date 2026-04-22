@@ -9,6 +9,8 @@ class CourseLibrary extends StatelessWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color primaryColor = AppColors.getPrimaryColor(isDark);
     final Color surfaceColor = AppColors.getSurfaceColor(isDark);
+    final Color textColor = isDark ? Colors.white : Colors.grey.shade800;
+    final Color subTextColor = isDark ? Colors.white70 : Colors.grey.shade600;
 
     return ListView.builder(
       padding: const EdgeInsets.all(12.0),
@@ -39,11 +41,11 @@ class CourseLibrary extends StatelessWidget {
             ),
             title: Text(
               "Reference Material ${index + 1}",
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(fontWeight: FontWeight.w700, color: textColor),
             ),
-            subtitle: const Text(
+            subtitle: Text(
               "Grade 12 • Chemistry • 5.2 MB",
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: subTextColor),
             ),
             trailing: IconButton(
               icon: Icon(Icons.download_for_offline_rounded, color: primaryColor),

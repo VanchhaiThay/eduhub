@@ -41,10 +41,13 @@ class CourseContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                Localization.text(selectedLanguage, 'chooseSubject'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                Localization.text(selectedLanguage, 'ChooseSubject'),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : Colors.grey.shade800,
+                ),
               ),
-              Icon(Icons.sort_rounded, color: primaryColor),
             ],
           ),
           const SizedBox(height: 15),
@@ -85,7 +88,10 @@ class CourseContent extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withOpacity(0.5)),
-                        const Text("No subjects match your search", style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "No subjects match your search",
+                          style: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
+                        ),
                       ],
                     ),
                   ),

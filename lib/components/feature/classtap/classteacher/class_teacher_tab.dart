@@ -271,43 +271,96 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     final data = doc.data() as Map<String, dynamic>;
     final name = data["className"] ?? "Unnamed Class";
     final code = data["joinCode"] ?? "000000";
+    final textColor = isDark ? Colors.white : Colors.grey.shade800;
+    final subTextColor = isDark ? Colors.white60 : Colors.grey.shade600;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: isDark ? Border.all(color: Colors.white.withOpacity(0.1), width: 1) : null,
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.08), width: 1) : null,
         boxShadow: [
           if (!isDark) BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: brandColor.withOpacity(0.1),
-          child: Icon(Icons.school_rounded, color: brandColor),
-        ),
-        title: Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text("Code: $code", style: TextStyle(color: brandColor, fontWeight: FontWeight.bold)),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert_rounded, color: theme.hintColor),
-          onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
-          itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
-            const PopupMenuItem(value: 'delete', child: Text("Delete", style: TextStyle(color: Colors.redAccent))),
-          ],
-        ),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ClassDetailPage(className: name, classId: doc.id)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ClassDetailPage(className: name, classId: doc.id)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        brandColor.withOpacity(0.15),
+                        brandColor.withOpacity(0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(Icons.school_rounded, color: brandColor, size: 26),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.tag_rounded, size: 14, color: brandColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            code,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: brandColor,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, color: subTextColor),
+                  onSelected: (val) => val == 'delete' ? deleteClass(doc.id, code) : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
+                    const PopupMenuItem(value: 'delete', child: Text("Delete", style: TextStyle(color: Colors.redAccent))),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

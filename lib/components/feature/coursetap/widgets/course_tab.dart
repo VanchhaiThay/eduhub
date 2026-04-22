@@ -39,23 +39,30 @@ class _CourseTabState extends State<CourseTab> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color textColor = isDark ? Colors.white : Colors.grey.shade800;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: CourseDrawer(
         selectedIndex: _selectedIndex,
         onItemSelected: (index) => setState(() => _selectedIndex = index),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       appBar: AppBar(
         title: Text(
           _selectedIndex == 0
               ? Localization.text(widget.selectedLanguage, 'coursePage')
               : Localization.text(widget.selectedLanguage, 'library'),
-          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: textColor,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
