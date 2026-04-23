@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/api_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -19,6 +20,8 @@ class _SignUpPageState extends State<SignUpPage> {
   bool isLoading = false;
   bool isPasswordVisible = false;
 
+  final ApiService _apiService = ApiService();
+
   Future<void> signup() async {
     if (isLoading) return;
 
@@ -33,19 +36,42 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => isLoading = true);
 
     try {
+      // Step 1: Create user in Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
+      final String firebaseUid = userCredential.user!.uid;
+      final String email = emailController.text.trim();
+      final String password = passwordController.text.trim();
+      final String firstName = firstNameController.text.trim();
+      final String lastName = lastNameController.text.trim();
+
+      // Step 2: Store in PostgreSQL via Node.js backend (Primary storage)
+      try {
+        await _apiService.signup(
+          firebaseUid: firebaseUid,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          password: password,
+          role: role,
+        );
+      } catch (e) {
+        // Log error but continue - Firebase storage still works as backup
+        debugPrint('PostgreSQL storage error: $e');
+      }
+
+      // Step 3: Store in Firebase Firestore (Secondary storage)
       await FirebaseFirestore.instance
           .collection("users")
-          .doc(userCredential.user!.uid)
+          .doc(firebaseUid)
           .set({
-        "firstName": firstNameController.text.trim(),
-        "lastName": lastNameController.text.trim(),
-        "email": emailController.text.trim(),
+        "firstName": firstName,
+        "lastName": lastName,
+        "email": email,
         "role": role,
         "createdAt": Timestamp.now(),
       });
