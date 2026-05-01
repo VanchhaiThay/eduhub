@@ -19,7 +19,7 @@ class ApiService {
   }) async {
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/signup'),
+        Uri.parse('$baseUrl/auth/signup'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firebaseUid': firebaseUid,
@@ -48,12 +48,9 @@ class ApiService {
   }) async {
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
@@ -79,6 +76,34 @@ class ApiService {
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['error'] ?? 'User not found');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUser({
+    required String firebaseUid,
+    String? firstName,
+    String? lastName,
+  }) async {
+    try {
+      final Map<String, dynamic> body = {'firebaseUid': firebaseUid};
+
+      if (firstName != null) body['firstName'] = firstName;
+      if (lastName != null) body['lastName'] = lastName;
+
+      final response = await _client.put(
+        Uri.parse('$baseUrl/users/$firebaseUid'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Update failed');
       }
     } catch (e) {
       throw Exception('Failed to connect to server: $e');

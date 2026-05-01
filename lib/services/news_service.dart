@@ -89,8 +89,9 @@ class NewsService {
 
     try {
       debugPrint('[NewsService] $label - GET ${_sanitize(url)}');
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 15));
 
       debugPrint('[NewsService] $label - status ${response.statusCode}');
 

@@ -103,10 +103,117 @@ class ClassDetailController extends ChangeNotifier {
 
   // ================= IMAGE LOGIC =================
 
-  Future<void> pickAndUploadImage() async {
+  Future<void> pickAndUploadImage(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
     if (image == null) return;
+
+    String captionText = messageController.text.trim();
+    bool shouldSend = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setStateDialog) {
+            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+            final media = MediaQuery.of(dialogContext);
+
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 380,
+                  maxHeight: media.size.height * 0.8,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Preview Photo',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.file(
+                          File(image!.path),
+                          height: media.size.height * 0.24,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        initialValue: captionText,
+                        maxLines: 2,
+                        minLines: 1,
+                        onChanged: (value) => captionText = value,
+                        decoration: InputDecoration(
+                          hintText: 'Add a message with this photo...',
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF1F3F5),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: const Text('Cancel'),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final replaced = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                imageQuality: 85,
+                              );
+                              if (replaced != null && dialogContext.mounted) {
+                                setStateDialog(() => image = replaced);
+                              }
+                            },
+                            icon: const Icon(Icons.tune_rounded),
+                            label: const Text('Edit Photo'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF38A39D),
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {
+                              shouldSend = true;
+                              Navigator.pop(dialogContext);
+                            },
+                            child: const Text('Send'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    final caption = captionText.trim();
+    if (!shouldSend || image == null) return;
+    final XFile selectedImage = image!;
 
     isUploading = true;
     notifyListeners();
@@ -114,9 +221,13 @@ class ClassDetailController extends ChangeNotifier {
     try {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_$uid.jpg';
       final path = 'chat_images/$fileName';
-      await Supabase.instance.client.storage.from('photo_message').upload(path, File(image.path));
+      await Supabase.instance.client.storage.from('photo_message').upload(path, File(selectedImage.path));
       final String imageUrl = Supabase.instance.client.storage.from('photo_message').getPublicUrl(path);
-      await saveMessageToFirestore(imageUrl: imageUrl);
+      await saveMessageToFirestore(
+        imageUrl: imageUrl,
+        text: caption.isEmpty ? null : caption,
+      );
+      messageController.clear();
     } catch (e) {
       debugPrint("Upload Error: $e");
     } finally {

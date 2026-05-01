@@ -11,6 +11,3 @@ Server: http://localhost:3000
 Test: http://localhost:3000/api/health
 
 All done! Backend ready for Flutter integration.
-
-
-

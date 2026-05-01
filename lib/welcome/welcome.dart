@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eduhub/components/home/home.dart';
-import 'package:eduhub/auth/signin.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -16,25 +14,13 @@ class _WelcomePageState extends State<WelcomePage> {
   void initState() {
     super.initState();
 
-    // Wait 3 seconds then navigate
-    Timer(const Duration(seconds: 3), () {
+    // Wait 3 seconds then always navigate to Home
+    Timer(const Duration(seconds: 3), () async {
       if (!mounted) return; // Check if widget is still in tree
-
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomePage(initialNotification: 0),
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(initialNotification: 0)),
+      );
     });
   }
 
@@ -45,7 +31,9 @@ class _WelcomePageState extends State<WelcomePage> {
 
     return Scaffold(
       // Toggle background: Yellow for Light, Deep Grey/Black for Dark
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFFED811),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFFED811),
       body: SafeArea(
         child: Column(
           children: [
@@ -57,11 +45,18 @@ class _WelcomePageState extends State<WelcomePage> {
               height: 160,
               decoration: BoxDecoration(
                 // We keep the Teal brand color, or dim it slightly for dark mode
-                color: isDark ? const Color(0xFF269A94) : const Color(0xFF2CB5AE),
+                color: isDark
+                    ? const Color(0xFF269A94)
+                    : const Color(0xFF2CB5AE),
                 shape: BoxShape.circle,
-                boxShadow: isDark 
-                  ? [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10)] 
-                  : null,
+                boxShadow: isDark
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : null,
               ),
               alignment: Alignment.center,
               child: const Text(
@@ -79,7 +74,7 @@ class _WelcomePageState extends State<WelcomePage> {
             Text(
               "EduHub",
               style: TextStyle(
-                fontSize: 28, 
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black, // Dynamic text
               ),
@@ -88,10 +83,12 @@ class _WelcomePageState extends State<WelcomePage> {
               "Hub for Students & Teachers",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white70 : Colors.black87, // Subtle contrast
+                color: isDark
+                    ? Colors.white70
+                    : Colors.black87, // Subtle contrast
               ),
             ),
-            
+
             const Spacer(),
 
             // Loading Section
@@ -108,9 +105,7 @@ class _WelcomePageState extends State<WelcomePage> {
                 const SizedBox(width: 12),
                 Text(
                   "Loading",
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 ),
               ],
             ),

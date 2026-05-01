@@ -1,9 +1,11 @@
 import 'package:eduhub/components/home/services/home_notification_service.dart';
 import 'package:eduhub/components/home/widgets/bottom_nav_bar.dart';
 import 'package:eduhub/components/home/widgets/custom_app_bar.dart';
+import 'package:eduhub/components/app/asset_app.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../feature/hometap/home_students/home_student_tap.dart';
+import '../feature/hometap/home_guest_tap.dart';
 import '../feature/hometap/home_teacher/home_teacher_tab.dart';
 import '../feature/coursetap/widgets/course_tab.dart';
 import '../feature/classtap/classteacher/class_teacher_tab.dart';
@@ -11,9 +13,11 @@ import '../feature/classtap/classstudents/class_student_tab.dart';
 import '../feature/assignmentstap/assignment_teacher_tab.dart';
 import '../feature/assignmentstap/assignment_student_tab.dart';
 import '../feature/profile/profile_tab.dart';
+import '../../services/time_tracker_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required int initialNotification});
+  final int initialNotification;
+  const HomePage({super.key, this.initialNotification = 0});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -30,13 +34,50 @@ class _HomePageState extends State<HomePage> {
   bool isLoading = true;
   String? photoUrl;
 
+  // GlobalKey to access HomeTeacherTabState
+  final GlobalKey<HomeTeacherTabState> _homeTeacherKey =
+      GlobalKey<HomeTeacherTabState>();
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    // Listen to auth state changes
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (mounted) {
+        // If user becomes null (logged out), end time tracking
+        if (user == null) {
+          try {
+            final timeTrackerService = TimeTrackerService();
+            await timeTrackerService.endTimeTracking();
+          } catch (e) {
+            print('Failed to end time tracking during auth state change: $e');
+          }
+        }
+        _loadUserData();
+      }
+    });
   }
 
   Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // No user logged in - set empty state
+      if (mounted) {
+        setState(() {
+          role = null;
+          firstName = null;
+          lastName = null;
+          email = null;
+          selectedLanguage = "English";
+          photoUrl = null;
+          notificationCount = 0;
+          isLoading = false;
+        });
+      }
+      return;
+    }
+
     final data = await HomeNotificationService.loadUserDataAndNotifications();
     if (data['error'] == null && mounted) {
       setState(() {
@@ -85,6 +126,12 @@ class _HomePageState extends State<HomePage> {
     final tabs = [
       role == 'teacher'
           ? HomeTeacherTab(
+              key: _homeTeacherKey,
+              language: selectedLanguage,
+              onLearnMore: () => setState(() => _selectedIndex = 1),
+            )
+          : role == null
+          ? HomeGuestTab(
               language: selectedLanguage,
               onLearnMore: () => setState(() => _selectedIndex = 1),
             )
@@ -95,9 +142,13 @@ class _HomePageState extends State<HomePage> {
       CourseTab(selectedLanguage: selectedLanguage),
       role == 'teacher'
           ? ClassTeacherTab(language: selectedLanguage)
+          : role == null
+          ? Container() // Empty container for guest users
           : ClassStudentTab(language: selectedLanguage),
       role == 'teacher'
           ? AssignmentTeacherTab(language: selectedLanguage)
+          : role == null
+          ? Container() // Empty container for guest users
           : AssignmentStudentTab(language: selectedLanguage),
       ProfileTab(
         firstName: firstName,
@@ -111,23 +162,51 @@ class _HomePageState extends State<HomePage> {
 
     final navItems = [
       BottomNavigationBarItem(
-        icon: Icon(Icons.home, size: _selectedIndex == 0 ? 28 : 24),
+        icon: GestureDetector(
+          onDoubleTap: () {},
+          child: Image.asset(
+            AppAssets.home,
+            width: _selectedIndex == 0 ? 28 : 24,
+            height: _selectedIndex == 0 ? 28 : 24,
+            color: _selectedIndex == 0 ? const Color(0xFF2B827D) : Colors.grey,
+          ),
+        ),
         label: 'Home',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.book, size: _selectedIndex == 1 ? 28 : 24),
+        icon: Image.asset(
+          AppAssets.course,
+          width: _selectedIndex == 1 ? 28 : 24,
+          height: _selectedIndex == 1 ? 28 : 24,
+          color: _selectedIndex == 1 ? const Color(0xFF2B827D) : Colors.grey,
+        ),
         label: 'Course',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.school, size: _selectedIndex == 2 ? 28 : 24),
+        icon: Image.asset(
+          AppAssets.classIcon,
+          width: _selectedIndex == 2 ? 28 : 24,
+          height: _selectedIndex == 2 ? 28 : 24,
+          color: _selectedIndex == 2 ? const Color(0xFF2B827D) : Colors.grey,
+        ),
         label: 'Class',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.assignment, size: _selectedIndex == 3 ? 28 : 24),
+        icon: Image.asset(
+          AppAssets.assignment,
+          width: _selectedIndex == 3 ? 28 : 24,
+          height: _selectedIndex == 3 ? 28 : 24,
+          color: _selectedIndex == 3 ? const Color(0xFF2B827D) : Colors.grey,
+        ),
         label: 'Assignments',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.person, size: _selectedIndex == 4 ? 28 : 24),
+        icon: Image.asset(
+          AppAssets.profile,
+          width: _selectedIndex == 4 ? 28 : 24,
+          height: _selectedIndex == 4 ? 28 : 24,
+          color: _selectedIndex == 4 ? const Color(0xFF2B827D) : Colors.grey,
+        ),
         label: 'Profile',
       ),
     ];

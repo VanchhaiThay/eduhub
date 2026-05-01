@@ -7,7 +7,7 @@ class MessageInputBar extends StatelessWidget {
   final int recordDuration;
   final String formattedDuration;
   final bool isDark;
-  final VoidCallback onPickImage;
+  final Future<void> Function(BuildContext context) onPickImage;
   final VoidCallback onRecordToggle;
   final VoidCallback onSendText;
 
@@ -25,18 +25,30 @@ class MessageInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inputBackground = isDark ? ClassDetailConstants.darkSurface : Colors.white;
+    final fieldBackground = isDark ? ClassDetailConstants.darkInput : const Color(0xFFF1F3F5);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      color: isDark ? ClassDetailConstants.darkSurface : Colors.white,
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      decoration: BoxDecoration(
+        color: inputBackground,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           if (!isRecording)
             IconButton(
-              icon: const Icon(Icons.image_outlined, color: ClassDetailConstants.brandColor),
-              onPressed: onPickImage,
+              icon: const Icon(Icons.add_photo_alternate_outlined, color: ClassDetailConstants.brandColor),
+              onPressed: () => onPickImage(context),
             ),
           Expanded(
-            child: isRecording ? _buildRecordingState() : _buildTextField(isDark),
+            child: isRecording ? _buildRecordingState() : _buildTextField(isDark, fieldBackground),
           ),
           const SizedBox(width: 4),
           ValueListenableBuilder<TextEditingValue>(
@@ -46,17 +58,17 @@ class MessageInputBar extends StatelessWidget {
 
               if (isRecording) {
                 return IconButton(
-                  icon: const Icon(Icons.stop_circle, color: Colors.red, size: 32),
+                  icon: const Icon(Icons.stop_circle_outlined, color: Colors.red, size: 31),
                   onPressed: onRecordToggle,
                 );
               } else if (!hasText) {
                 return IconButton(
-                  icon: const Icon(Icons.mic_none, color: ClassDetailConstants.brandColor, size: 28),
+                  icon: const Icon(Icons.mic_rounded, color: ClassDetailConstants.brandColor, size: 27),
                   onPressed: onRecordToggle,
                 );
               } else {
                 return IconButton(
-                  icon: const Icon(Icons.send_rounded, color: ClassDetailConstants.brandColor, size: 28),
+                  icon: const Icon(Icons.arrow_upward_rounded, color: ClassDetailConstants.brandColor, size: 28),
                   onPressed: onSendText,
                 );
               }
@@ -88,7 +100,7 @@ class MessageInputBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(bool isDark) {
+  Widget _buildTextField(bool isDark, Color fieldBackground) {
     return TextField(
       controller: controller,
       maxLines: null,
@@ -96,8 +108,21 @@ class MessageInputBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: "Message...",
         filled: true,
-        fillColor: isDark ? ClassDetailConstants.darkInput : Colors.grey[100],
+        fillColor: fieldBackground,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white10 : const Color(0xFFE5E8EC),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: const BorderSide(
+            color: ClassDetailConstants.brandColor,
+            width: 1.2,
+          ),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );

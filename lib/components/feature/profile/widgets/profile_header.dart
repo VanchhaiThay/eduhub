@@ -16,31 +16,27 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String initials =
-        "${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}"
-            .toUpperCase();
-
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
         Container(
-          height: 200,
+          height: 180,
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isDark
-                  ? [const Color(0xFF232526), const Color(0xFF414345)]
-                  : [const Color(0xFF1E3C72), const Color(0xFF2A5298)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+                  ? [const Color(0xFF1a1d21), const Color(0xFF2d3136)]
+                  : [const Color(0xFFf8f9fa), const Color(0xFFe9ecef)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
             borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(40),
+              bottom: Radius.circular(32),
             ),
           ),
         ),
-        Positioned(top: 130, child: imagePicker),
+        Positioned(top: 120, child: imagePicker),
       ],
     );
   }

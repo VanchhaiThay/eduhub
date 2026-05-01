@@ -1,21 +1,20 @@
 import 'dart:async';
-import 'package:eduhub/components/feature/coursetap/subject/art/art_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/biology/biology_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/chemistry/chemistry_page.dart';
-import 'package:eduhub/components/feature/coursetap/subject/english/english_page.dart';
+import 'package:eduhub/components/feature/coursetap/subject/language/language.dart';
 import 'package:eduhub/components/feature/coursetap/subject/geography/geography_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/history/history_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/math/math_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/khmer/khmer_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/physics/physics_page.dart';
-import 'package:eduhub/components/feature/coursetap/subject/science/science_page.dart';
-import 'package:eduhub/components/feature/coursetap/subject/sports/sports_page.dart';
 import 'package:eduhub/components/feature/coursetap/subject/tech/tech_page.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../utils/localization.dart';
 import 'package:eduhub/services/news_service.dart';
+import 'package:eduhub/services/time_tracker_service.dart';
+import 'package:eduhub/components/app/asset_app.dart';
 
 class HomeStudentTab extends StatefulWidget {
   final String language;
@@ -47,6 +46,10 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
   String? _newsError;
   String? _scholarshipError;
 
+  // Tracking time - accumulated total
+  String _totalTimeSpent = "0m 0s";
+  int _totalSeconds = 0;
+
   final List<String> sliderImages = [
     "assets/images/slide1.png",
     "assets/images/slide2.png",
@@ -55,34 +58,28 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
 
   // <-- Move subjects list here
   final List<Map<String, dynamic>> subjects = [
-    {"nameKey": "math", "icon": Icons.calculate},
-    {"nameKey": "science", "icon": Icons.science},
-    {"nameKey": "history", "icon": Icons.history_edu},
-    {"nameKey": "english", "icon": Icons.translate},
-    {"nameKey": "geography", "icon": Icons.public},
-    {"nameKey": "physics", "icon": Icons.wb_iridescent},
-    {"nameKey": "chemistry", "icon": Icons.biotech},
-    {"nameKey": "biology", "icon": Icons.psychology},
-    {"nameKey": "art", "icon": Icons.palette},
-    {"nameKey": "khmer", "icon": Icons.translate},
-    {"nameKey": "tech", "icon": Icons.computer},
-    {"nameKey": "sports", "icon": Icons.sports_basketball},
+    {"nameKey": "math", "icon": AppAssets.mathIcon},
+    {"nameKey": "history", "icon": AppAssets.historyIcon},
+    {"nameKey": "language", "icon": AppAssets.languageIcon},
+    {"nameKey": "geography", "icon": AppAssets.geographyIcon},
+    {"nameKey": "physics", "icon": AppAssets.physicsIcon},
+    {"nameKey": "chemistry", "icon": AppAssets.chemistryIcon},
+    {"nameKey": "biology", "icon": AppAssets.biologyIcon},
+    {"nameKey": "khmer", "icon": AppAssets.khmerIcon},
+    {"nameKey": "tech", "icon": AppAssets.techIcon},
   ];
 
   // Subject routes
   final Map<String, Widget> subjectRoutes = {
     "math": const MathPage(),
-    "science": const SciencePage(),
     "history": const HistoryPage(),
-    "english": const EnglishPage(),
+    "language": const LanguagePage(),
     "geography": const GeographyPage(),
     "physics": const PhysicsPage(),
     "chemistry": const ChemistryPage(),
     "biology": const BiologyPage(),
-    "art": const ArtPage(),
     "khmer": const KhmerPage(),
     "tech": const TechPage(),
-    "sports": const SportsPage(),
   };
 
   @override
@@ -102,6 +99,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     });
 
     final service = NewsService();
+    final timeTrackerService = TimeTrackerService();
 
     // Fetch both in parallel but independently so one failure doesn't
     // break the other.
@@ -113,16 +111,43 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
       _scholarshipError = e.toString();
       return <dynamic>[];
     });
+    final timeFuture = timeTrackerService.getTotalTimeToday().catchError((e) {
+      print('Failed to load total time: $e');
+      return {'formattedTime': '0m 0s', 'totalSeconds': 0};
+    });
 
-    final results = await Future.wait([newsFuture, scholarFuture]);
+    final results = await Future.wait([newsFuture, scholarFuture, timeFuture]);
+
+    // Load tracking time - sum of all sessions today
+    final newsList = results[0] as List<dynamic>;
+    final scholarshipList = results[1] as List<dynamic>;
+    final timeData = results[2] as Map<String, dynamic>;
 
     if (mounted) {
       setState(() {
-        _newsList = results[0];
-        _scholarshipList = results[1];
+        _newsList = newsList;
+        _scholarshipList = scholarshipList;
+        _totalTimeSpent = timeData['formattedTime'] ?? '0m 0s';
+        _totalSeconds = timeData['totalSeconds'] ?? 0;
         _isLoadingNews = false;
         _isLoadingScholarships = false;
       });
+    }
+  }
+
+  Future<void> _refreshTimeData() async {
+    try {
+      final timeTrackerService = TimeTrackerService();
+      final timeData = await timeTrackerService.getTotalTimeToday();
+
+      if (mounted) {
+        setState(() {
+          _totalTimeSpent = timeData['formattedTime'] ?? '0m 0s';
+          _totalSeconds = timeData['totalSeconds'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print('Failed to refresh time data: $e');
     }
   }
 
@@ -370,6 +395,59 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(0xFF38A39D),
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Accumulated Time Spent Display
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38A39D).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.timer,
+                          color: Color(0xFF38A39D),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Total Time Spent Today",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          _totalTimeSpent,
+                          style: const TextStyle(
+                            color: Color(0xFF38A39D),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Refresh button
+                        InkWell(
+                          onTap: _refreshTimeData,
+                          child: Icon(
+                            Icons.refresh,
+                            size: 16,
+                            color: Color(0xFF38A39D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -751,10 +829,16 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                   color: const Color(0xFF38A39D).withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  subject['icon'],
-                  color: const Color(0xFF38A39D),
-                  size: 28,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Image.asset(
+                    subject['icon'],
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.image_not_supported,
+                      color: Color(0xFF38A39D),
+                      size: 28,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
@@ -787,26 +871,30 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
         ),
         borderRadius: BorderRadius.circular(20),
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Expanded(
             flex: 5,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   Localization.text(widget.language, "welcomeTitle"),
                   style: const TextStyle(
-                    fontSize: 19,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   Localization.text(widget.language, "welcomeDesc"),
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
                 TextButton(
                   onPressed: widget.onLearnMore,
                   child: Text(
@@ -814,6 +902,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                     style: const TextStyle(
                       color: Color(0xFF38A39D),
                       fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -823,11 +912,11 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
           Expanded(
             flex: 3,
             child: Image.asset(
-              "assets/images/learning.png", // change to your image
-              height: 70,
+              "assets/images/learning.png",
+              height: 60,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, size: 70),
+                  const Icon(Icons.broken_image, size: 60),
             ),
           ),
         ],

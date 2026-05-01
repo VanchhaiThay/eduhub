@@ -159,7 +159,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     if (image == null) return;
 
     final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.contains(ConnectivityResult.none)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

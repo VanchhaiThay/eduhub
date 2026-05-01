@@ -23,7 +23,7 @@ class BottomNavBar extends StatelessWidget {
           color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -41,8 +41,13 @@ class BottomNavBar extends StatelessWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
           selectedItemColor: const Color(0xFF2B827D),
           unselectedItemColor: Colors.grey,
           items: items,

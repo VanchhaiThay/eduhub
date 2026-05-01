@@ -46,33 +46,54 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         flexibleSpace: Container(),
         title: Row(
           children: [
-            GestureDetector(
-              onTap: onProfileTap,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.white24,
-                  shape: BoxShape.circle,
+            if (firstName != null || lastName != null)
+              GestureDetector(
+                onTap: onProfileTap,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white,
+                    backgroundImage: photoUrl != null
+                        ? NetworkImage(photoUrl!)
+                        : null,
+                    child: photoUrl == null
+                        ? Text(
+                            "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
+                            style: const TextStyle(
+                              color: Color(0xFF38A39D),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.white,
-                  backgroundImage: photoUrl != null
-                      ? NetworkImage(photoUrl!)
-                      : null,
-                  child: photoUrl == null
-                      ? Text(
-                          "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
-                          style: const TextStyle(
-                            color: Color(0xFF38A39D),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        )
-                      : null,
+              )
+            else
+              GestureDetector(
+                onTap: onProfileTap,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      color: const Color(0xFF38A39D),
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
-            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -80,7 +101,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "${firstName ?? ""} ${lastName ?? ""}",
+                    firstName != null || lastName != null
+                        ? "${firstName ?? ""} ${lastName ?? ""}"
+                        : "Welcome to EduHub",
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 17,
@@ -90,26 +113,36 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.white30, width: 0.5),
-                    ),
-                    child: Text(
-                      role?.toUpperCase() ?? "",
-                      style: const TextStyle(
+                  if (role != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.white30, width: 0.5),
+                      ),
+                      child: Text(
+                        role?.toUpperCase() ?? "",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    )
+                  else
+                    Text(
+                      "Sign in to get started",
+                      style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.0,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

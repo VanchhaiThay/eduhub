@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -16,7 +17,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  String role = "student"; 
+  String role = "student";
   bool isLoading = false;
   bool isPasswordVisible = false;
 
@@ -39,9 +40,9 @@ class _SignUpPageState extends State<SignUpPage> {
       // Step 1: Create user in Firebase Auth
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
 
       final String firebaseUid = userCredential.user!.uid;
       final String email = emailController.text.trim();
@@ -51,7 +52,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // Step 2: Store in PostgreSQL via Node.js backend (Primary storage)
       try {
-        await _apiService.signup(
+        final response = await _apiService.signup(
           firebaseUid: firebaseUid,
           firstName: firstName,
           lastName: lastName,
@@ -59,9 +60,16 @@ class _SignUpPageState extends State<SignUpPage> {
           password: password,
           role: role,
         );
+        debugPrint('✅ PostgreSQL storage successful');
+
+        // Save postgres user ID for tracking
+        final userId = response['user']['id'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('postgres_user_id', userId);
       } catch (e) {
-        // Log error but continue - Firebase storage still works as backup
-        debugPrint('PostgreSQL storage error: $e');
+        debugPrint('❌ PostgreSQL storage error: $e');
+        _showStatus('Backend error: $e', isError: true);
+        // Continue anyway - Firebase storage still works as backup
       }
 
       // Step 3: Store in Firebase Firestore (Secondary storage)
@@ -69,12 +77,12 @@ class _SignUpPageState extends State<SignUpPage> {
           .collection("users")
           .doc(firebaseUid)
           .set({
-        "firstName": firstName,
-        "lastName": lastName,
-        "email": email,
-        "role": role,
-        "createdAt": Timestamp.now(),
-      });
+            "firstName": firstName,
+            "lastName": lastName,
+            "email": email,
+            "role": role,
+            "createdAt": Timestamp.now(),
+          });
 
       if (!mounted) return;
       _showStatus("Account created successfully!");
@@ -146,7 +154,11 @@ class _SignUpPageState extends State<SignUpPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -168,12 +180,18 @@ class _SignUpPageState extends State<SignUpPage> {
               Text(
                 "Create an account to start your journey",
                 // ignore: deprecated_member_use
-                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 16,
+                ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-              Image(image: AssetImage("assets/images/signup.png"),width: 170,),
+                  Image(
+                    image: AssetImage("assets/images/signup.png"),
+                    width: 170,
+                  ),
                 ],
               ),
 
@@ -193,31 +211,59 @@ class _SignUpPageState extends State<SignUpPage> {
                     // First & Last Name
                     Row(
                       children: [
-                        Expanded(child: _buildTextField(firstNameController, "First Name", Icons.person_outline)),
+                        Expanded(
+                          child: _buildTextField(
+                            firstNameController,
+                            "First Name",
+                            Icons.person_outline,
+                          ),
+                        ),
                         const SizedBox(width: 15),
-                        Expanded(child: _buildTextField(lastNameController, "Last Name", null)),
+                        Expanded(
+                          child: _buildTextField(
+                            lastNameController,
+                            "Last Name",
+                            null,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _buildTextField(emailController, "Email Address", Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                    _buildTextField(
+                      emailController,
+                      "Email Address",
+                      Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
                     const SizedBox(height: 20),
                     _buildTextField(
-                      passwordController, 
-                      "Password", 
-                      Icons.lock_outline, 
+                      passwordController,
+                      "Password",
+                      Icons.lock_outline,
                       isPassword: true,
                     ),
                     const SizedBox(height: 25),
-                    
-                    const Text("I am a:", style: TextStyle(color: Colors.white70, fontSize: 14)),
+
+                    const Text(
+                      "I am a:",
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
                     const SizedBox(height: 12),
-                    
+
                     // Professional Role Toggles
                     Row(
                       children: [
-                        buildRoleButton("student", "Student", Icons.school_outlined),
+                        buildRoleButton(
+                          "student",
+                          "Student",
+                          Icons.school_outlined,
+                        ),
                         const SizedBox(width: 15),
-                        buildRoleButton("teacher", "Teacher", Icons.co_present_outlined),
+                        buildRoleButton(
+                          "teacher",
+                          "Teacher",
+                          Icons.co_present_outlined,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 40),
@@ -231,31 +277,53 @@ class _SignUpPageState extends State<SignUpPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFF38A39D),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           elevation: 0,
                         ),
                         child: isLoading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38A39D)))
-                            : const Text("CREATE ACCOUNT", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF38A39D),
+                                ),
+                              )
+                            : const Text(
+                                "CREATE ACCOUNT",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 30),
-              
+
               // Footer
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // ignore: deprecated_member_use
-                    Text("Already have an account? ", style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    Text(
+                      "Already have an account? ",
+                      style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: const Text(
                         "Sign In",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ],
@@ -269,7 +337,13 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData? icon, {bool isPassword = false, TextInputType? keyboardType}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData? icon, {
+    bool isPassword = false,
+    TextInputType? keyboardType,
+  }) {
     return TextField(
       controller: controller,
       obscureText: isPassword && !isPasswordVisible,
@@ -278,14 +352,29 @@ class _SignUpPageState extends State<SignUpPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-        prefixIcon: icon != null ? Icon(icon, color: Colors.white70, size: 20) : null,
-        suffixIcon: isPassword ? IconButton(
-          icon: Icon(isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white70, size: 18),
-          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
-        ) : null,
+        prefixIcon: icon != null
+            ? Icon(icon, color: Colors.white70, size: 20)
+            : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isPasswordVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+                onPressed: () =>
+                    setState(() => isPasswordVisible = !isPasswordVisible),
+              )
+            : null,
         // ignore: deprecated_member_use
-        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
-        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
         contentPadding: const EdgeInsets.symmetric(vertical: 8),
       ),
     );

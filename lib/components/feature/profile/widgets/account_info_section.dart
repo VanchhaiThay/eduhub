@@ -6,6 +6,8 @@ class AccountInfoSection extends StatelessWidget {
   final String? email;
   final String? firstName;
   final String? lastName;
+  final VoidCallback? onEditFirstName;
+  final VoidCallback? onEditLastName;
 
   const AccountInfoSection({
     super.key,
@@ -13,19 +15,23 @@ class AccountInfoSection extends StatelessWidget {
     this.email,
     this.firstName,
     this.lastName,
+    this.onEditFirstName,
+    this.onEditLastName,
   });
 
   Widget _buildSectionTitle(String title, {required BuildContext context}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(
           title,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade500,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -33,11 +39,23 @@ class AccountInfoSection extends StatelessWidget {
   }
 
   Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+          width: 1,
+        ),
       ),
       child: Column(children: children),
     );
@@ -47,33 +65,70 @@ class AccountInfoSection extends StatelessWidget {
     BuildContext context,
     IconData icon,
     String label,
-    String? value,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: Colors.blueGrey.shade400),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-                Text(
-                  value ?? "-",
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+    String? value, {
+    VoidCallback? onEdit,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          color: onEdit != null
+              ? (isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF38A39D).withOpacity(0.12)
+                    : const Color(0xFF38A39D).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 22, color: const Color(0xFF38A39D)),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value ?? "-",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onEdit != null)
+              Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade400,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -98,12 +153,14 @@ class AccountInfoSection extends StatelessWidget {
             Icons.person_outline,
             Localization.text(selectedLanguage, 'firstName'),
             firstName,
+            onEdit: onEditFirstName,
           ),
           _infoRow(
             context,
             Icons.badge_outlined,
             Localization.text(selectedLanguage, 'lastName'),
             lastName,
+            onEdit: onEditLastName,
           ),
         ]),
       ],

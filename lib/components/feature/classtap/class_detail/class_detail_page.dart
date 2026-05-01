@@ -37,14 +37,59 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
     super.dispose();
   }
 
-  void _showMessageAction(String messageId, String currentText, bool isMe, bool hasImage) {
+  void _showMessageAction(
+    String messageId,
+    String currentText,
+    bool isMe,
+    bool hasImage,
+    String? imageUrl,
+  ) {
     if (!isMe) return;
 
     MessageActionSheet.show(
       context,
       hasImage: hasImage,
+      imageUrl: imageUrl,
+      classId: widget.classId,
+      messageId: messageId,
+      messageText: currentText,
+      onViewImage: imageUrl == null ? null : () => _showImagePreview(imageUrl),
       onEdit: () => _showEditDialog(messageId, currentText),
       onDelete: () => _showDeleteDialog(messageId),
+    );
+  }
+
+  void _showImagePreview(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(color: Colors.black.withOpacity(0.9)),
+            ),
+            Center(child: InteractiveViewer(child: Image.network(imageUrl))),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black45,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 26),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -98,14 +143,25 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
     return Scaffold(
       backgroundColor: isDark ? ClassDetailConstants.darkBackground : ClassDetailConstants.lightBackground,
       appBar: AppBar(
-        elevation: 1,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: isDark ? ClassDetailConstants.darkSurface : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: false,
         title: Text(
           widget.className,
-          style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 18),
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1D2228),
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: isDark ? Colors.white : Colors.black),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: isDark ? Colors.white : const Color(0xFF1D2228),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),

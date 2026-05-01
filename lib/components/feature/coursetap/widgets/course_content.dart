@@ -30,38 +30,35 @@ class CourseContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           CourseSearch(
             controller: searchController,
             onChanged: onSearchChanged,
             selectedLanguage: selectedLanguage,
           ),
-          const SizedBox(height: 25),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                Localization.text(selectedLanguage, 'ChooseSubject'),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : Colors.grey.shade800,
-                ),
-              ),
-            ],
+          const SizedBox(height: 24),
+          Text(
+            Localization.text(selectedLanguage, 'ChooseSubject'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              letterSpacing: -0.3,
+            ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 16),
           Expanded(
             child: filteredSubjects.isNotEmpty
                 ? GridView.builder(
                     physics: const BouncingScrollPhysics(),
                     itemCount: filteredSubjects.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      childAspectRatio: 0.85,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.85,
+                        ),
                     itemBuilder: (context, index) {
                       final item = filteredSubjects[index];
                       final key = item['nameKey'];
@@ -71,7 +68,9 @@ class CourseContent extends StatelessWidget {
                           if (routes.containsKey(key)) {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => routes[key]!),
+                              MaterialPageRoute(
+                                builder: (context) => routes[key]!,
+                              ),
                             );
                           }
                         },
@@ -87,10 +86,16 @@ class CourseContent extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withOpacity(0.5)),
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 80,
+                          color: Colors.grey.withOpacity(0.5),
+                        ),
                         Text(
                           "No subjects match your search",
-                          style: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
