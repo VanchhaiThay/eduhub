@@ -3,29 +3,22 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AssignmentService {
-  static const String baseUrl = 'http://localhost:3000/api'; // Update with your server URL
-  
+  static const String baseUrl =
+      'http://10.0.2.2:3000/api'; // Use 10.0.2.2 for Android emulator, 127.0.0.1 for iOS simulator
+
   // Create new assignment
   static Future<Map<String, dynamic>> createAssignment({
     required String title,
-    String? description,
-    required String teacherId,
-    String language = 'en',
-    List<String>? imageUrls,
+    required String language,
     List<Map<String, dynamic>>? questions,
   }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/assignments'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'title': title,
-          'description': description,
-          'teacher_id': teacherId,
           'language': language,
-          'image_urls': imageUrls ?? [],
           'questions': questions ?? [],
         }),
       );
@@ -36,16 +29,16 @@ class AssignmentService {
         throw Exception('Failed to create assignment: ${response.body}');
       }
     } catch (e) {
+      print('AssignmentService Error: $e');
+      print('URL attempted: $baseUrl/assignments');
       throw Exception('Error creating assignment: $e');
     }
   }
 
-  // Get all assignments for a teacher
-  static Future<List<Map<String, dynamic>>> getTeacherAssignments(String teacherId) async {
+  // Get all assignments
+  static Future<List<Map<String, dynamic>>> getAllAssignments() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/assignments/teacher/$teacherId'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/assignments'));
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
@@ -87,9 +80,7 @@ class AssignmentService {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/assignments/$assignmentId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'title': title,
           'description': description,
@@ -125,7 +116,9 @@ class AssignmentService {
   }
 
   // Clear all assignments for a teacher
-  static Future<Map<String, dynamic>> clearTeacherAssignments(String teacherId) async {
+  static Future<Map<String, dynamic>> clearTeacherAssignments(
+    String teacherId,
+  ) async {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/assignments/teacher/$teacherId/clear'),

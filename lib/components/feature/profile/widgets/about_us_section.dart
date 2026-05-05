@@ -31,7 +31,6 @@ class AboutUsSection extends StatelessWidget {
 
   Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -128,17 +127,14 @@ class AboutUsSection extends StatelessWidget {
     return Column(
       children: [
         _buildSectionTitle('About', context: context),
-        _buildSettingsCard(
-          context,
-          [
-            _buildMenuItem(
-              context,
-              Icons.info_outline,
-              'About Us',
-              'Learn more about our app',
-            ),
-          ],
-        ),
+        _buildSettingsCard(context, [
+          _buildMenuItem(
+            context,
+            Icons.info_outline,
+            'About Us',
+            'Learn more about our app',
+          ),
+        ]),
       ],
     );
   }

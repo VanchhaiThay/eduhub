@@ -216,6 +216,76 @@ class HomeTeacherTabState extends State<HomeTeacherTab> {
     }
   }
 
+  Future<void> _refreshTimeDataWithFeedback() async {
+    // Show loading indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text("Refreshing time tracker..."),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+          backgroundColor: Color(0xFF38A39D),
+        ),
+      );
+    }
+
+    try {
+      final timeTrackerService = TimeTrackerService();
+      final timeData = await timeTrackerService.getTotalTimeToday();
+
+      if (mounted) {
+        setState(() {
+          _totalTimeSpent = timeData['formattedTime'] ?? '0m 0s';
+          _totalSeconds = timeData['totalSeconds'] ?? 0;
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text("Time tracker refreshed! $_totalTimeSpent"),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text("Failed to refresh: $e"),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      print('Failed to refresh time data: $e');
+    }
+  }
+
   Future<void> _launchNewsURL(String? urlString) async {
     if (urlString == null || urlString.isEmpty) return;
 
@@ -519,76 +589,10 @@ class HomeTeacherTabState extends State<HomeTeacherTab> {
                       color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
-
-                  Row(
-                    children: [
-                      const Text(
-                        "60%",
-
-                        style: TextStyle(
-                          color: Color(0xFF38A39D),
-
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      const Text(
-                        "40%",
-
-                        style: TextStyle(
-                          color: Colors.purple,
-
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
 
               const SizedBox(height: 12),
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-
-                child: Row(
-                  children: [
-                    // Lessons progress (60%)
-                    Expanded(
-                      flex: 60,
-                      child: Container(
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38A39D),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Time spent progress (40%)
-                    Expanded(
-                      flex: 40,
-                      child: Container(
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.purple,
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
 
               // Accumulated Time Spent Display
               Container(
@@ -643,8 +647,9 @@ class HomeTeacherTabState extends State<HomeTeacherTab> {
                         ),
                         const SizedBox(width: 8),
                         // Refresh button
-                        InkWell(
+                        GestureDetector(
                           onTap: _refreshTimeData,
+                          onDoubleTap: _refreshTimeDataWithFeedback,
                           child: Icon(
                             Icons.refresh,
                             size: 16,

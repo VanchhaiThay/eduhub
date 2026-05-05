@@ -6,11 +6,91 @@ import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class _FullScreenImageView extends StatelessWidget {
+  final String imageUrl;
+
+  const _FullScreenImageView({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Full screen image
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Center(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: Colors.tealAccent,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Close button
+          Positioned(
+            top: 50,
+            right: 20,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+          // Safe area padding for status bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: MediaQuery.of(context).padding.top,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ProfileImagePicker extends StatefulWidget {
   final String? initialImageUrl;
   final Function(String?) onImageUrlChanged;
   final VoidCallback? onUploadStarted;
   final VoidCallback? onUploadFinished;
+  final String? firstName;
+  final String? lastName;
 
   const ProfileImagePicker({
     super.key,
@@ -18,6 +98,8 @@ class ProfileImagePicker extends StatefulWidget {
     required this.onImageUrlChanged,
     this.onUploadStarted,
     this.onUploadFinished,
+    this.firstName,
+    this.lastName,
   });
 
   @override
@@ -33,6 +115,16 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
   void initState() {
     super.initState();
     _profileImageUrl = widget.initialImageUrl;
+  }
+
+  String _getInitials() {
+    String first = widget.firstName?.isNotEmpty == true
+        ? widget.firstName![0]
+        : '';
+    String last = widget.lastName?.isNotEmpty == true
+        ? widget.lastName![0]
+        : '';
+    return '$first$last'.toUpperCase();
   }
 
   Future<void> _showImageSourceSheet() async {
@@ -238,12 +330,43 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     }
   }
 
+  void _showFullScreenImage() {
+    if (_profileImageUrl == null) return;
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            _FullScreenImageView(imageUrl: _profileImageUrl!),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        barrierDismissible: true,
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  void _handleImageTap() {
+    if (_profileImageUrl != null && !_isUploading) {
+      _showFullScreenImage();
+    } else if (!_isUploading) {
+      _showImageSourceSheet();
+    }
+  }
+
+  void _handleCameraIconTap() {
+    if (!_isUploading) {
+      _showImageSourceSheet();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This widget provides the GestureDetector for tapping to show sheet
+    // This widget provides the GestureDetector for tapping to show sheet or full screen
     // Avatar UI is in profile_header.dart, but picker logic here
     return GestureDetector(
-      onTap: _isUploading ? null : _showImageSourceSheet,
+      onTap: _handleImageTap,
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
@@ -257,7 +380,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
           alignment: Alignment.center,
           children: [
             CircleAvatar(
-              radius: 55,
+              radius: 40,
               backgroundColor: Theme.of(context).brightness == Brightness.dark
                   ? Colors.grey[800]
                   : Colors.blue.shade50,
@@ -265,7 +388,16 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
                   ? NetworkImage(_profileImageUrl!)
                   : null,
               child: _profileImageUrl == null
-                  ? Container() // Initials in header
+                  ? Text(
+                      _getInitials(),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                    )
                   : null,
             ),
             if (_isUploading)
@@ -273,13 +405,16 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             Positioned(
               bottom: 0,
               right: 0,
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.tealAccent,
-                child: const Icon(
-                  Icons.camera_alt,
-                  size: 18,
-                  color: Colors.black,
+              child: GestureDetector(
+                onTap: _handleCameraIconTap,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.tealAccent,
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 18,
+                    color: Colors.black,
+                  ),
                 ),
               ),
             ),

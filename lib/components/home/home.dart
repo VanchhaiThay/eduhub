@@ -1,6 +1,7 @@
 import 'package:eduhub/components/home/services/home_notification_service.dart';
 import 'package:eduhub/components/home/widgets/bottom_nav_bar.dart';
 import 'package:eduhub/components/home/widgets/custom_app_bar.dart';
+import 'package:eduhub/components/home/widgets/adaptive_app_bar.dart';
 import 'package:eduhub/components/app/asset_app.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +14,8 @@ import '../feature/classtap/classstudents/class_student_tab.dart';
 import '../feature/assignmentstap/assignment_teacher_tab.dart';
 import '../feature/assignmentstap/assignment_student_tab.dart';
 import '../feature/profile/profile_tab.dart';
+import '../feature/auth_prompt/class_auth_prompt.dart';
+import '../feature/auth_prompt/assignment_auth_prompt.dart';
 import '../../services/time_tracker_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -143,12 +146,15 @@ class _HomePageState extends State<HomePage> {
       role == 'teacher'
           ? ClassTeacherTab(language: selectedLanguage)
           : role == null
-          ? Container() // Empty container for guest users
+          ? ClassAuthPrompt(selectedLanguage: selectedLanguage, isDark: isDark)
           : ClassStudentTab(language: selectedLanguage),
       role == 'teacher'
           ? AssignmentTeacherTab(language: selectedLanguage)
           : role == null
-          ? Container() // Empty container for guest users
+          ? AssignmentAuthPrompt(
+              selectedLanguage: selectedLanguage,
+              isDark: isDark,
+            )
           : AssignmentStudentTab(language: selectedLanguage),
       ProfileTab(
         firstName: firstName,
@@ -162,14 +168,11 @@ class _HomePageState extends State<HomePage> {
 
     final navItems = [
       BottomNavigationBarItem(
-        icon: GestureDetector(
-          onDoubleTap: () {},
-          child: Image.asset(
-            AppAssets.home,
-            width: _selectedIndex == 0 ? 28 : 24,
-            height: _selectedIndex == 0 ? 28 : 24,
-            color: _selectedIndex == 0 ? const Color(0xFF2B827D) : Colors.grey,
-          ),
+        icon: Image.asset(
+          AppAssets.home,
+          width: _selectedIndex == 0 ? 28 : 24,
+          height: _selectedIndex == 0 ? 28 : 24,
+          color: _selectedIndex == 0 ? const Color(0xFF2B827D) : Colors.grey,
         ),
         label: 'Home',
       ),
@@ -212,7 +215,8 @@ class _HomePageState extends State<HomePage> {
     ];
 
     return Scaffold(
-      appBar: CustomAppBar(
+      appBar: AdaptiveAppBar(
+        selectedIndex: _selectedIndex,
         firstName: firstName,
         lastName: lastName,
         email: email,

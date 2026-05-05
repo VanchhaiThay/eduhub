@@ -10,6 +10,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onNotificationTap;
   final bool isDark;
+  final bool hideNotifications;
 
   const CustomAppBar({
     super.key,
@@ -22,6 +23,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onProfileTap,
     required this.onNotificationTap,
     required this.isDark,
+    this.hideNotifications = false,
   });
 
   @override
@@ -63,7 +65,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         : null,
                     child: photoUrl == null
                         ? Text(
-                            "${firstName?[0] ?? ""}${lastName?[0] ?? ""}",
+                            "${firstName?[0] ?? ""}${lastName?[0] ?? ""}"
+                                .toUpperCase(),
                             style: const TextStyle(
                               color: Color(0xFF38A39D),
                               fontWeight: FontWeight.bold,
@@ -148,55 +151,57 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  onPressed: onNotificationTap,
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Colors.white,
-                    size: 28,
+        actions: hideNotifications
+            ? null
+            : [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: onNotificationTap,
+                        icon: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      if (notificationCount > 0)
+                        Positioned(
+                          right: 10,
+                          top: 12,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF1F1F1F)
+                                    : const Color(0xFF38A39D),
+                                width: 1.5,
+                              ),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              '$notificationCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (notificationCount > 0)
-                  Positioned(
-                    right: 10,
-                    top: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isDark
-                              ? const Color(0xFF1F1F1F)
-                              : const Color(0xFF38A39D),
-                          width: 1.5,
-                        ),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 18,
-                        minHeight: 18,
-                      ),
-                      child: Text(
-                        '$notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
               ],
-            ),
-          ),
-        ],
       ),
     );
   }

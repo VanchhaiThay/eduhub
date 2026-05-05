@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:eduhub/components/home/home.dart';
 import 'package:eduhub/utils/auth_flow_manager.dart';
 import 'package:eduhub/services/time_tracker_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LogoutButton extends StatelessWidget {
   final BuildContext pageContext;
@@ -70,6 +71,11 @@ class LogoutButton extends StatelessWidget {
               }
 
               await auth.FirebaseAuth.instance.signOut();
+
+              // Clear cached user ID from SharedPreferences
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('postgres_user_id');
+
               await AuthFlowManager.setStayOnHomeAfterLogout(true);
               if (pageContext.mounted) {
                 Navigator.pushAndRemoveUntil(

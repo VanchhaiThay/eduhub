@@ -157,16 +157,39 @@ router.get('/total-today', auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const totalTodayQuery = `
-      SELECT SUM(EXTRACT(EPOCH FROM spend_time)) as total_seconds
+    // Get time from completed sessions today
+    const completedTodayQuery = `
+      SELECT SUM(EXTRACT(EPOCH FROM spend_time)) as completed_seconds
       FROM time_tracker 
       WHERE user_id = $1 
         AND DATE(start_time) = CURRENT_DATE
         AND spend_time IS NOT NULL
     `;
     
-    const result = await pool.query(totalTodayQuery, [userId]);
-    const totalSeconds = Math.floor(result.rows[0].total_seconds || 0);
+    const completedResult = await pool.query(completedTodayQuery, [userId]);
+    const completedSeconds = Math.floor(completedResult.rows[0].completed_seconds || 0);
+
+    // Get time from currently active session today
+    const activeSessionQuery = `
+      SELECT start_time
+      FROM time_tracker 
+      WHERE user_id = $1 
+        AND DATE(start_time) = CURRENT_DATE
+        AND end_time IS NULL
+      ORDER BY start_time DESC LIMIT 1
+    `;
+    
+    const activeResult = await pool.query(activeSessionQuery, [userId]);
+    let activeSeconds = 0;
+    
+    if (activeResult.rows.length > 0) {
+      const startTime = new Date(activeResult.rows[0].start_time);
+      const currentTime = new Date();
+      activeSeconds = Math.floor((currentTime - startTime) / 1000);
+    }
+
+    // Total time = completed sessions + current active session
+    const totalSeconds = completedSeconds + activeSeconds;
 
     // Format the time as hours, minutes, seconds
     const hours = Math.floor(totalSeconds / 3600);
@@ -182,6 +205,8 @@ router.get('/total-today', auth, async (req, res) => {
       formattedTime = `${seconds}s`;
     }
 
+    console.log(`Total time today for user ${userId}: ${formattedTime} (completed: ${completedSeconds}s, active: ${activeSeconds}s)`);
+
     res.json({
       totalSeconds: totalSeconds,
       formattedTime: formattedTime,
@@ -189,6 +214,10 @@ router.get('/total-today', auth, async (req, res) => {
         hours: hours,
         minutes: minutes,
         seconds: seconds
+      },
+      breakdown: {
+        completedSeconds: completedSeconds,
+        activeSeconds: activeSeconds
       }
     });
   } catch (error) {

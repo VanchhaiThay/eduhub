@@ -151,6 +151,76 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     }
   }
 
+  Future<void> _refreshTimeDataWithFeedback() async {
+    // Show loading indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text("Refreshing time tracker..."),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+          backgroundColor: Color(0xFF38A39D),
+        ),
+      );
+    }
+
+    try {
+      final timeTrackerService = TimeTrackerService();
+      final timeData = await timeTrackerService.getTotalTimeToday();
+
+      if (mounted) {
+        setState(() {
+          _totalTimeSpent = timeData['formattedTime'] ?? '0m 0s';
+          _totalSeconds = timeData['totalSeconds'] ?? 0;
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text("Time tracker refreshed! $_totalTimeSpent"),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text("Failed to refresh: $e"),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      print('Failed to refresh time data: $e');
+    }
+  }
+
   Future<void> _launchNewsURL(String? urlString) async {
     if (urlString == null || urlString.isEmpty) return;
     final Uri url = Uri.parse(urlString);
@@ -376,26 +446,7 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                       color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
-                  const Text(
-                    "75%",
-                    style: TextStyle(
-                      color: Color(0xFF38A39D),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: 0.75,
-                  minHeight: 10,
-                  backgroundColor: const Color(0xFF38A39D).withOpacity(0.1),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFF38A39D),
-                  ),
-                ),
               ),
               const SizedBox(height: 16),
               // Accumulated Time Spent Display
@@ -437,8 +488,9 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                         ),
                         const SizedBox(width: 8),
                         // Refresh button
-                        InkWell(
+                        GestureDetector(
                           onTap: _refreshTimeData,
+                          onDoubleTap: _refreshTimeDataWithFeedback,
                           child: Icon(
                             Icons.refresh,
                             size: 16,

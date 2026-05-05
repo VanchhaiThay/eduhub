@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/api_service.dart';
 import 'widgets/profile_image_picker.dart';
 import 'widgets/profile_header.dart';
-import 'widgets/account_details_section.dart';
 import 'widgets/preferences_section.dart';
 import 'widgets/about_us_section.dart';
 import 'widgets/logout_button.dart';
@@ -160,52 +159,142 @@ class _ProfileTabState extends State<ProfileTab> {
 
     // Check if user is logged in
     if (_currentUser == null) {
-      // Show empty state when logged out
+      // Show all profile components with Login/Sign Up options when logged out
       return Scaffold(
-        body: Center(
+        body: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.person_off_outlined,
-                size: 80,
-                color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'No user logged in',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Please sign in to view your profile',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                ),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/login');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF38A39D),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+              // Profile Header with Login/Sign Up prompt
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [const Color(0xFF38A39D), const Color(0xFF2C8B85)],
                   ),
                 ),
-                child: const Text('Sign In'),
+                child: Column(
+                  children: [
+                    // const SizedBox(height: 40),
+                    // Profile Avatar placeholder
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.2),
+                        border: Border.all(color: Colors.white, width: 3),
+                      ),
+                      child: Icon(
+                        Icons.person_outline,
+                        size: 50,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                    // const SizedBox(height: 20),
+                    Text(
+                      'Guest User',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sign in to access your profile',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Login and Sign Up buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/login');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF38A39D),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: const Text('Login'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/signup');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                              side: const BorderSide(color: Colors.white),
+                            ),
+                          ),
+                          child: const Text('Sign Up'),
+                        ),
+                      ],
+                    ),
+                    // const SizedBox(height: 30),
+                  ],
+                ),
               ),
+              const SizedBox(height: 15),
+              // const SizedBox(height: 24),
+              // const SizedBox(height: 32),
+              // Preferences Section (always accessible)
+              PreferencesSection(
+                selectedLanguage: widget.selectedLanguage,
+                onLanguageChanged: widget.onLanguageChanged,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 25),
+              // About Us Section (always accessible)
+              AboutUsSection(
+                selectedLanguage: widget.selectedLanguage,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 40),
+              // Login Button instead of Logout
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF38A39D),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Login / Sign Up',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -215,50 +304,15 @@ class _ProfileTabState extends State<ProfileTab> {
     // Show profile when logged in
     return Scaffold(
       body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: Column(
           children: [
+            const SizedBox(height: 20),
             ProfileHeader(
               firstName: _firstName,
               lastName: _lastName,
-              imagePicker: ProfileImagePicker(
-                initialImageUrl: _profileImageUrl,
-                onImageUrlChanged: (url) {
-                  if (mounted) setState(() => _profileImageUrl = url);
-                },
-                onUploadStarted: () {
-                  if (mounted) setState(() => _isUploading = true);
-                },
-                onUploadFinished: () {
-                  if (mounted) setState(() => _isUploading = false);
-                },
-              ),
-              isDark: isDark,
-            ),
-            const SizedBox(height: 90),
-            AccountDetailsSection(
-              firstName: _firstName,
-              lastName: _lastName,
-              role: widget.role,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Profile',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ),
-            InkWell(
-              onTap: () {
+              email: widget.email,
+              onEditProfile: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -274,86 +328,21 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                 );
               },
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                      blurRadius: 16,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.grey.shade100,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF38A39D).withOpacity(0.12)
-                            : const Color(0xFF38A39D).withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.edit_outlined,
-                        size: 22,
-                        color: const Color(0xFF38A39D),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Edit Profile Information',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1A1A1A),
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'View and edit your profile information',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade500,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: isDark
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade400,
-                    ),
-                  ],
-                ),
+              imagePicker: ProfileImagePicker(
+                initialImageUrl: _profileImageUrl,
+                firstName: _firstName,
+                lastName: _lastName,
+                onImageUrlChanged: (url) {
+                  if (mounted) setState(() => _profileImageUrl = url);
+                },
+                onUploadStarted: () {
+                  if (mounted) setState(() => _isUploading = true);
+                },
+                onUploadFinished: () {
+                  if (mounted) setState(() => _isUploading = false);
+                },
               ),
+              isDark: isDark,
             ),
             const SizedBox(height: 32),
             PreferencesSection(

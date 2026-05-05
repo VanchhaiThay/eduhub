@@ -13,7 +13,9 @@ import 'welcome/welcome.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'components/feature/classtap/class_detail/class_detail_page.dart';
 import 'components/feature/assignmentstap/assignment_student_tab.dart';
+import 'components/feature/profile/customer_service/customer_service_page.dart';
 import 'auth/signin.dart';
+import 'auth/signup.dart';
 import 'services/time_tracker_service.dart';
 
 // Local notifications plugin
@@ -359,7 +361,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ),
           ),
           home: const WelcomePage(),
-          routes: {'/login': (context) => const LoginPage()},
+          routes: {
+            '/login': (context) => const LoginPage(),
+            '/signup': (context) => const SignUpPage(),
+            '/customer-service': (context) => const CustomerServicePage(),
+          },
         );
       },
     );
