@@ -41,7 +41,6 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _titleController = TextEditingController();
   List<QuestionData> _questions = [];
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -79,18 +78,15 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
       final String fileName = 'q_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
       // Upload to Supabase Bucket
-      await _supabase.storage
-          .from(_bucketName)
-          .upload(
+      await _supabase.storage.from(_bucketName).upload(
             fileName,
             File(image.path),
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
 
       // Get the Public URL to save in Firestore later
-      final String publicUrl = _supabase.storage
-          .from(_bucketName)
-          .getPublicUrl(fileName);
+      final String publicUrl =
+          _supabase.storage.from(_bucketName).getPublicUrl(fileName);
 
       setState(() {
         question.uploadedImageUrl = publicUrl;
@@ -113,7 +109,7 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
 
   // --- DATABASE LOGIC ---
 
-  Future<void> _saveToPostgresAndPreview() async {
+  Future<void> _previewOnly() async {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -121,7 +117,49 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
       return;
     }
 
-    setState(() => _isSaving = true);
+    // Create preview data from current form state without saving
+    final previewData = {
+      'id': 'preview',
+      'title': _titleController.text,
+      'language': widget.language,
+      'createdAt': DateTime.now().toIso8601String(),
+      'questions': _questions
+          .map(
+            (q) => {
+              'question_text': q.questionController.text,
+              'type': q.selectedType,
+              'image_url': q.uploadedImageUrl ?? '',
+              'correct_answer': q.correctAnswer ?? '',
+              'points': int.tryParse(q.pointsController.text) ?? 1,
+              'options': q.selectedType == 'Multiple Choice'
+                  ? q.optionControllers.map((c) => c.text).toList()
+                  : [],
+            },
+          )
+          .toList(),
+    };
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AssignmentPreviewPage(
+            data: previewData,
+            isTeacherPreview: true,
+            onSaveCallback: _saveAssignmentToDatabase,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveAssignmentToDatabase() async {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a title")));
+      return;
+    }
 
     try {
       final questionsData = _questions.map((q) {
@@ -138,100 +176,28 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
       }).toList();
 
       // Store assignment in PostgreSQL
-      final response = await AssignmentService.createAssignment(
+      await AssignmentService.createAssignment(
         title: _titleController.text,
         language: widget.language,
         questions: questionsData,
       );
 
-      setState(() => _isSaving = false);
-
       if (mounted) {
-        // Convert PostgreSQL response to match expected format
-        final assignmentData = response['assignment'];
-        final previewData = {
-          'id': assignmentData['id'].toString(),
-          'title': assignmentData['title'],
-          'language': assignmentData['language'],
-          'createdAt': assignmentData['created_at'],
-          'questions': assignmentData['questions']
-              .map(
-                (q) => {
-                  'question_text': q['question_text'],
-                  'type': q['type'],
-                  'image_url': q['image_url'] ?? '',
-                  'correct_answer': q['correct_answer'] ?? '',
-                  'points': q['points'],
-                  'options':
-                      q['options']?.map((opt) => opt['option_text']).toList() ??
-                      [],
-                },
-              )
-              .toList(),
-        };
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AssignmentPreviewPage(
-              data: previewData,
-              isTeacherPreview: true,
-            ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Assignment saved successfully!"),
+            backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      setState(() => _isSaving = false);
-
-      // Fallback: Show preview without saving if backend is not available
-      if (e.toString().contains('Connection refused') ||
-          e.toString().contains('Network')) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Backend server not running. Showing preview without saving.",
-            ),
-            backgroundColor: Colors.orange,
+          SnackBar(
+            content: Text("Save failed: $e"),
+            backgroundColor: Colors.red,
           ),
         );
-
-        // Create preview data from current form state
-        final previewData = {
-          'id': 'preview',
-          'title': _titleController.text,
-          'language': widget.language,
-          'createdAt': DateTime.now().toIso8601String(),
-          'questions': _questions
-              .map(
-                (q) => {
-                  'question_text': q.questionController.text,
-                  'type': q.selectedType,
-                  'image_url': q.uploadedImageUrl ?? '',
-                  'correct_answer': q.correctAnswer ?? '',
-                  'points': int.tryParse(q.pointsController.text) ?? 1,
-                  'options': q.selectedType == 'Multiple Choice'
-                      ? q.optionControllers.map((c) => c.text).toList()
-                      : [],
-                },
-              )
-              .toList(),
-        };
-
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AssignmentPreviewPage(
-                data: previewData,
-                isTeacherPreview: true,
-              ),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("API Error: $e")));
       }
     }
   }
@@ -272,9 +238,8 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF0EBF8),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF0EBF8),
       bottomNavigationBar: _buildBottomBar(isDark),
       body: SingleChildScrollView(
         child: Center(
@@ -335,9 +300,9 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
           ),
           const SizedBox(width: 8),
           _buildCompactButton(
-            onPressed: _isSaving ? null : _saveToPostgresAndPreview,
-            icon: _isSaving ? Icons.hourglass_top : Icons.remove_red_eye,
-            label: _isSaving ? "Saving..." : "Preview",
+            onPressed: _previewOnly,
+            icon: Icons.remove_red_eye,
+            label: "Preview",
             color: const Color(0xFF38A39D),
             isOutlined: false,
           ),
@@ -420,9 +385,8 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
             controller: _titleController,
             decoration: InputDecoration(
               filled: true,
-              fillColor: isDark
-                  ? const Color(0xFF2C2C2C)
-                  : const Color(0xFFF1F3F4),
+              fillColor:
+                  isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF1F3F4),
               hintText: 'Enter Assignment Title...',
               border: const UnderlineInputBorder(),
             ),
@@ -452,9 +416,8 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
                     controller: question.questionController,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: isDark
-                          ? Colors.white10
-                          : const Color(0xFFF1F3F4),
+                      fillColor:
+                          isDark ? Colors.white10 : const Color(0xFFF1F3F4),
                       hintText: "Question",
                       border: const UnderlineInputBorder(),
                     ),
@@ -505,7 +468,7 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
                         question.uploadedImageUrl!,
-                        height: 200,
+                        height: MediaQuery.of(context).size.height * 0.6,
                         width: double.infinity,
                         fit: BoxFit.contain,
                         // Shows local file as placeholder while network image loads
@@ -566,8 +529,8 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
             const SizedBox(height: 8),
             if (question.selectedType == 'Multiple Choice') ...[
               ...question.optionControllers.asMap().entries.map(
-                (entry) => _buildOptionRow(qIndex, entry.key),
-              ),
+                    (entry) => _buildOptionRow(qIndex, entry.key),
+                  ),
               TextButton.icon(
                 onPressed: () => setState(
                   () => question.optionControllers.add(TextEditingController()),
@@ -595,7 +558,7 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
     final question = _questions[qIndex];
     bool isSelected =
         question.correctAnswer == question.optionControllers[oIndex].text &&
-        question.optionControllers[oIndex].text.isNotEmpty;
+            question.optionControllers[oIndex].text.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(

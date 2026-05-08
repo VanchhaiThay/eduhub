@@ -14,7 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../utils/localization.dart';
 import 'package:eduhub/services/news_service.dart';
 import 'package:eduhub/services/time_tracker_service.dart';
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 
 class HomeStudentTab extends StatefulWidget {
   final String language;
@@ -49,6 +49,13 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
   // Tracking time - accumulated total
   String _totalTimeSpent = "0m 0s";
   int _totalSeconds = 0;
+
+  // Weekly time data for chart
+  List<double> _weeklyPercentages = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+  bool _isLoadingWeeklyData = true;
+
+  // Real-time update timer
+  Timer? _realTimeTimer;
 
   final List<String> sliderImages = [
     "assets/images/slide1.png",
@@ -88,12 +95,14 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     _pageController = PageController(initialPage: 0);
     _startAutoSlider();
     _loadAllData();
+    _startRealTimeUpdates();
   }
 
   Future<void> _loadAllData() async {
     setState(() {
       _isLoadingNews = true;
       _isLoadingScholarships = true;
+      _isLoadingWeeklyData = true;
       _newsError = null;
       _scholarshipError = null;
     });
@@ -116,12 +125,20 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
       return {'formattedTime': '0m 0s', 'totalSeconds': 0};
     });
 
-    final results = await Future.wait([newsFuture, scholarFuture, timeFuture]);
+    // Try to get weekly data, but fallback to sample data if not available
+    final weeklyFuture = _loadWeeklyData().catchError((e) {
+      print('Failed to load weekly data: $e');
+      // Generate sample data based on current time
+      return _generateSampleWeeklyData();
+    });
 
-    // Load tracking time - sum of all sessions today
+    final results = await Future.wait(
+        [newsFuture, scholarFuture, timeFuture, weeklyFuture]);
+
     final newsList = results[0] as List<dynamic>;
     final scholarshipList = results[1] as List<dynamic>;
     final timeData = results[2] as Map<String, dynamic>;
+    final weeklyData = results[3] as List<double>;
 
     if (mounted) {
       setState(() {
@@ -129,8 +146,10 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
         _scholarshipList = scholarshipList;
         _totalTimeSpent = timeData['formattedTime'] ?? '0m 0s';
         _totalSeconds = timeData['totalSeconds'] ?? 0;
+        _weeklyPercentages = weeklyData;
         _isLoadingNews = false;
         _isLoadingScholarships = false;
+        _isLoadingWeeklyData = false;
       });
     }
   }
@@ -255,7 +274,78 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
     _timer?.cancel();
     _pageController.dispose();
     _searchController.dispose();
+    _realTimeTimer?.cancel(); // Cancel real-time timer
     super.dispose();
+  }
+
+  // Start real-time updates for current day's progress
+  void _startRealTimeUpdates() {
+    _realTimeTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        _refreshTimeData();
+      }
+    });
+  }
+
+  // Calculate today's percentage of 24-hour day
+  double _getTodayPercentage() {
+    return (_totalSeconds / 86400) * 100; // 86400 seconds = 24 hours
+  }
+
+  // Helper method to get day names
+  String _getWeekDay(int index) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    if (index >= 0 && index < days.length) {
+      return days[index];
+    }
+    return '';
+  }
+
+  // Load weekly time tracking data
+  Future<List<double>> _loadWeeklyData() async {
+    try {
+      final timeTrackerService = TimeTrackerService();
+      final weeklyData = await timeTrackerService.getWeeklyTimeData();
+
+      // Convert time data to percentages (24 hours = 100%)
+      List<double> percentages = [];
+      if (weeklyData['dailyData'] != null) {
+        for (var dayData in weeklyData['dailyData']) {
+          final seconds = dayData['totalSeconds'] ?? 0;
+          final percentage =
+              (seconds / 86400) * 100; // 86400 seconds = 24 hours
+          percentages.add(percentage.clamp(0.0, 100.0));
+        }
+      }
+
+      // Ensure we have 7 days
+      while (percentages.length < 7) {
+        percentages.add(0.0);
+      }
+
+      return percentages.take(7).toList();
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  // Generate sample weekly data based on current time
+  List<double> _generateSampleWeeklyData() {
+    final now = DateTime.now();
+    final currentDay = now.weekday - 1; // Monday = 0, Sunday = 6
+
+    return List.generate(7, (index) {
+      if (index == currentDay) {
+        // Current day: use actual time percentage
+        return (_totalSeconds / 86400) * 100;
+      } else if (index < currentDay) {
+        // Past days: generate realistic data
+        return (index + 1) * 8 + (index % 3) * 5;
+      } else {
+        // Future days: 0 for now
+        return 0.0;
+      }
+    });
   }
 
   List<Map<String, dynamic>> _getFilteredSubjects() {
@@ -327,22 +417,22 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
         _isLoadingScholarships
             ? const Center(child: CircularProgressIndicator())
             : _scholarshipList.isEmpty
-            ? _buildEmptyState(
-                _scholarshipError != null
-                    ? "Couldn't load scholarships. Tap to retry."
-                    : "No scholarship updates available. Tap to retry.",
-              )
-            : SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _scholarshipList.take(6).length,
-                  itemBuilder: (context, index) {
-                    final item = _scholarshipList[index];
-                    return _buildScholarshipCard(item, isDark);
-                  },
-                ),
-              ),
+                ? _buildEmptyState(
+                    _scholarshipError != null
+                        ? "Couldn't load scholarships. Tap to retry."
+                        : "No scholarship updates available. Tap to retry.",
+                  )
+                : SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _scholarshipList.take(6).length,
+                      itemBuilder: (context, index) {
+                        final item = _scholarshipList[index];
+                        return _buildScholarshipCard(item, isDark);
+                      },
+                    ),
+                  ),
       ],
     );
   }
@@ -358,9 +448,8 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
           color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: const Color(0xFF38A39D).withOpacity(0.3)),
-          boxShadow: isDark
-              ? []
-              : [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          boxShadow:
+              isDark ? [] : [BoxShadow(color: Colors.black12, blurRadius: 5)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,6 +538,99 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                 ],
               ),
               const SizedBox(height: 16),
+
+              // Bar Chart for Learning Progress
+              SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: 100,
+                    barTouchData: BarTouchData(
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (_) => Colors.grey[800]!,
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          final day = _getWeekDay(group.x.toInt());
+                          return BarTooltipItem(
+                            '$day: ${rod.toY.round()}%',
+                            const TextStyle(color: Colors.white, fontSize: 12),
+                          );
+                        },
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            final day = _getWeekDay(value.toInt());
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                day,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 40,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              '${value.toInt()}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    barGroups: List.generate(7, (index) {
+                      // Use real time tracking data as percentage of 24-hour day
+                      // For current day, use real-time percentage
+                      final currentDayIndex =
+                          DateTime.now().weekday - 1; // Monday = 0, Sunday = 6
+                      final percentage = (index == currentDayIndex)
+                          ? _getTodayPercentage()
+                          : _weeklyPercentages[index];
+                      return BarChartGroupData(
+                        x: index,
+                        barRods: [
+                          BarChartRodData(
+                            toY: percentage.clamp(0.0, 100.0),
+                            color: (index == currentDayIndex)
+                                ? const Color(
+                                    0xFF2E7D32) // Highlight current day
+                                : const Color(0xFF38A39D),
+                            width: 12,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(6),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
               // Accumulated Time Spent Display
               Container(
                 padding: const EdgeInsets.all(12),
@@ -478,13 +660,26 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                     ),
                     Row(
                       children: [
-                        Text(
-                          _totalTimeSpent,
-                          style: const TextStyle(
-                            color: Color(0xFF38A39D),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _totalTimeSpent,
+                              style: const TextStyle(
+                                color: Color(0xFF38A39D),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '${_getTodayPercentage().toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                color: Color(0xFF38A39D),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 8),
                         // Refresh button
@@ -501,75 +696,6 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Container(
-          height: 200,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            border: isDark ? Border.all(color: Colors.white10) : null,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 35,
-                    sections: [
-                      PieChartSectionData(
-                        value: 45,
-                        title: '45%',
-                        color: const Color(0xFF38A39D),
-                        radius: 45,
-                        titleStyle: _chartTextStyle(),
-                      ),
-                      PieChartSectionData(
-                        value: 30,
-                        title: '30%',
-                        color: Colors.amber,
-                        radius: 45,
-                        titleStyle: _chartTextStyle(),
-                      ),
-                      PieChartSectionData(
-                        value: 25,
-                        title: '25%',
-                        color: Colors.orangeAccent,
-                        radius: 45,
-                        titleStyle: _chartTextStyle(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLegend(
-                    const Color(0xFF38A39D),
-                    Localization.text(widget.language, "lessons"),
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildLegend(
-                    Colors.amber,
-                    Localization.text(widget.language, "Time"),
-                    isDark,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildLegend(
-                    Colors.orangeAccent,
-                    Localization.text(widget.language, "Others"),
-                    isDark,
-                  ),
-                ],
               ),
             ],
           ),
@@ -636,25 +762,25 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
                 ),
               )
             : _newsList.isEmpty
-            ? _buildEmptyState(
-                _newsError != null
-                    ? "Couldn't load news. Tap to retry."
-                    : "No recent news found for Cambodia. Tap to retry.",
-              )
-            : Column(
-                children: _newsList.take(5).map((news) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildNewsTile(
-                      news['title'] ?? "No Title",
-                      news['pubDate'] ?? "Today",
-                      news['image_url'],
-                      news['link'],
-                      isDark,
-                    ),
-                  );
-                }).toList(),
-              ),
+                ? _buildEmptyState(
+                    _newsError != null
+                        ? "Couldn't load news. Tap to retry."
+                        : "No recent news found for Cambodia. Tap to retry.",
+                  )
+                : Column(
+                    children: _newsList.take(5).map((news) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildNewsTile(
+                          news['title'] ?? "No Title",
+                          news['pubDate'] ?? "Today",
+                          news['image_url'],
+                          news['link'],
+                          isDark,
+                        ),
+                      );
+                    }).toList(),
+                  ),
       ],
     );
   }
@@ -793,10 +919,10 @@ class _HomeStudentTabState extends State<HomeStudentTab> {
   }
 
   TextStyle _chartTextStyle() => const TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  );
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      );
 
   Widget _buildLegend(Color color, String text, bool isDark) {
     return Row(

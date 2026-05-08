@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 
 class AppColors {
   static const Color primaryTeal = Colors.teal;

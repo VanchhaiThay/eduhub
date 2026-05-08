@@ -2,7 +2,7 @@ import 'package:eduhub/components/home/services/home_notification_service.dart';
 import 'package:eduhub/components/home/widgets/bottom_nav_bar.dart';
 import 'package:eduhub/components/home/widgets/custom_app_bar.dart';
 import 'package:eduhub/components/home/widgets/adaptive_app_bar.dart';
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../feature/hometap/home_students/home_student_tap.dart';

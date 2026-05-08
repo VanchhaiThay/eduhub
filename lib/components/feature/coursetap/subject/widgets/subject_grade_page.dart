@@ -1,4 +1,4 @@
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 import 'package:eduhub/components/core/app_color.dart';
 import 'package:flutter/material.dart';
 

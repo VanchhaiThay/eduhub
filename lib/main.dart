@@ -17,7 +17,6 @@ import 'components/feature/profile/customer_service/customer_service_page.dart';
 import 'auth/signin.dart';
 import 'auth/signup.dart';
 import 'services/time_tracker_service.dart';
-
 // Local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -63,8 +62,7 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
   debugPrint('Notification channel created: login_channel');
@@ -243,7 +241,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
       return;
     }
-
     final enrollDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUser.uid)
@@ -276,8 +273,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
     final className =
         (enrollDoc.data()?['className'] as String?)?.trim().isNotEmpty == true
-        ? enrollDoc.data()!['className'] as String
-        : 'Class';
+            ? enrollDoc.data()!['className'] as String
+            : 'Class';
     // Navigate to class detail page
     rootNavigatorKey.currentState?.push(
       MaterialPageRoute(

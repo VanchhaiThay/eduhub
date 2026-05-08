@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eduhub/components/core/app_color.dart';
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 // --- Grade Page Imports ---
 import 'package:eduhub/components/feature/coursetap/subject/math/grade1.dart';
 import 'package:eduhub/components/feature/coursetap/subject/math/grade10.dart';

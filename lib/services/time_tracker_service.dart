@@ -156,4 +156,35 @@ class TimeTrackerService {
       throw Exception('Get total time today error: $e');
     }
   }
+
+  // Get weekly time tracking data
+  Future<Map<String, dynamic>> getWeeklyTimeData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('postgres_user_id');
+
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/time-tracker/weekly'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': userId.toString(),
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(
+          error['error'] ?? 'Failed to get weekly time data',
+        );
+      }
+    } catch (e) {
+      throw Exception('Get weekly time data error: $e');
+    }
+  }
 }

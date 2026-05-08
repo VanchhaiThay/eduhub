@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/localization.dart';
 import 'package:eduhub/services/news_service.dart';
-import 'package:eduhub/components/app/asset_app.dart';
+import 'package:eduhub/constants/app/asset_app.dart';
 
 class HomeGuestTab extends StatefulWidget {
   final String language;

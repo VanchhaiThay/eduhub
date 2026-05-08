@@ -5,11 +5,13 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
 class AssignmentPreviewPage extends StatefulWidget {
   final Map<String, dynamic> data;
   final bool isTeacherPreview;
+  final Future<void> Function()? onSaveCallback;
 
   const AssignmentPreviewPage({
     super.key,
     required this.data,
     this.isTeacherPreview = false,
+    this.onSaveCallback,
   });
 
   @override
@@ -21,6 +23,8 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
   final Map<int, TextEditingController> _controllers = {};
   bool _showResults = false;
   bool _isPublishing = false;
+  bool _isPreviewMode = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -28,6 +32,45 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  // --- SAVE FUNCTIONALITY FOR TEACHER MODE ---
+  Future<void> _saveAssignment() async {
+    if (widget.onSaveCallback == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Save functionality not available"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await widget.onSaveCallback!();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Assignment saved successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Save failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   // --- NEW FIREBASE PUBLISH LOGIC ---
@@ -128,6 +171,45 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
 
   // --- PREVIEW UI HELPERS ---
 
+  void _saveProgress() {
+    // Save current answers to local storage or show a confirmation
+    final savedAnswers =
+        _userAnswers.entries.where((entry) => entry.value.isNotEmpty).toList();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text("Progress saved! ${savedAnswers.length} questions answered."),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _togglePreview() {
+    setState(() {
+      _isPreviewMode = !_isPreviewMode;
+    });
+
+    if (_isPreviewMode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Preview mode: Correct answers are now visible"),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Preview mode disabled"),
+          backgroundColor: Colors.grey,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   void _handleSubmition(int totalQuestions) {
     bool allAnswered = true;
     for (int i = 0; i < totalQuestions; i++) {
@@ -156,9 +238,8 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF0EBF8),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF0EBF8),
       appBar: AppBar(
         title: Text(widget.isTeacherPreview ? "Teacher Preview" : "Assignment"),
         backgroundColor: const Color(0xFF38A39D),
@@ -205,22 +286,112 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                   return _buildInteractiveCard(entry.value, entry.key, isDark);
                 }),
                 const SizedBox(height: 24),
-
-                if (!_showResults)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _handleSubmition(questions.length),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF38A39D),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                if (widget.isTeacherPreview)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _saveAssignment,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  "SAVE",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 16),
+                                ),
                         ),
                       ),
-                      child: const Text(
-                        "TEST SUBMISSION",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _togglePreview(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            _isPreviewMode ? "HIDE PREVIEW" : "PREVIEW",
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _togglePreview(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            _isPreviewMode ? "HIDE PREVIEW" : "PREVIEW",
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _saveProgress(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            "SAVE",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (!_showResults && !widget.isTeacherPreview)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _handleSubmition(questions.length),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF38A39D),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          "TEST SUBMISSION",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                       ),
                     ),
                   ),
@@ -260,8 +431,7 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
   Widget _buildInteractiveCard(Map q, int index, bool isDark) {
     String type = q['type'] ?? 'Multiple Choice';
     int points = q['points'] ?? 1;
-    bool isCorrect =
-        _userAnswers[index]?.trim().toLowerCase() ==
+    bool isCorrect = _userAnswers[index]?.trim().toLowerCase() ==
         q['correct_answer']?.toString().toLowerCase();
 
     return Container(
@@ -311,7 +481,8 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
               padding: const EdgeInsets.only(top: 12),
               child: Image.network(
                 q['image_url'],
-                height: 250,
+                height: MediaQuery.of(context).size.height * 0.6,
+                width: double.infinity,
                 fit: BoxFit.contain,
               ),
             ),
@@ -344,7 +515,6 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
           if (_showResults && widget.isTeacherPreview)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -355,6 +525,25 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                 style: TextStyle(
                   color: isCorrect ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          if (_isPreviewMode && !widget.isTeacherPreview)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blue),
+                ),
+                child: Text(
+                  "Correct Answer: ${q['correct_answer']}",
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

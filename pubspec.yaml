@@ -5,7 +5,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.8
+  sdk: ^3.5.3
 
 dependencies:
   flutter:
@@ -43,6 +43,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+flutter_icons:
+  image_path: "assets/images/logoapp.png"
+  android: true
+  ios: true
 
 flutter:
 
