@@ -202,6 +202,65 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
     }
   }
 
+  Future<void> _publishAssignment() async {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a title")));
+      return;
+    }
+
+    try {
+      final questionsData = _questions.map((q) {
+        return {
+          'question_text': q.questionController.text,
+          'type': q.selectedType,
+          'image_url': q.uploadedImageUrl ?? "",
+          'correct_answer': q.correctAnswer ?? "",
+          'points': int.tryParse(q.pointsController.text) ?? 1,
+          'options': q.selectedType == 'Multiple Choice'
+              ? q.optionControllers.map((c) => c.text).toList()
+              : null,
+        };
+      }).toList();
+
+      // Store assignment in database
+      await AssignmentService.createAssignment(
+        title: _titleController.text,
+        language: widget.language,
+        questions: questionsData,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "Assignment published successfully! Students can now view it."),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Clear form after publishing
+        setState(() {
+          for (var q in _questions) {
+            q.dispose();
+          }
+          _questions = [QuestionData()];
+          _titleController.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Publish failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _handleNewAssignment() {
     showDialog(
       context: context,
@@ -259,7 +318,6 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
                   itemBuilder: (context, index) =>
                       _buildQuestionCard(index, isDark),
                 ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -281,30 +339,52 @@ class _AssignmentTeacherTabState extends State<AssignmentTeacherTab> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildCompactButton(
-            onPressed: _handleNewAssignment,
-            icon: Icons.refresh,
-            label: "New",
-            color: Colors.blueGrey,
-            isOutlined: true,
+          Row(
+            children: [
+              _buildCompactButton(
+                onPressed: _handleNewAssignment,
+                icon: Icons.refresh,
+                label: "Clear",
+                color: Colors.blueGrey,
+                isOutlined: true,
+              ),
+              const SizedBox(width: 8),
+              _buildCompactButton(
+                onPressed: () => setState(() => _questions.add(QuestionData())),
+                icon: Icons.add,
+                label: "Add",
+                color: Colors.blueAccent,
+                isOutlined: true,
+              ),
+              const SizedBox(width: 8),
+              _buildCompactButton(
+                onPressed: _previewOnly,
+                icon: Icons.remove_red_eye,
+                label: "Preview",
+                color: const Color(0xFF38A39D),
+                isOutlined: false,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _buildCompactButton(
-            onPressed: () => setState(() => _questions.add(QuestionData())),
-            icon: Icons.add,
-            label: "Add",
-            color: Colors.blueAccent,
-            isOutlined: true,
-          ),
-          const SizedBox(width: 8),
-          _buildCompactButton(
-            onPressed: _previewOnly,
-            icon: Icons.remove_red_eye,
-            label: "Preview",
-            color: const Color(0xFF38A39D),
-            isOutlined: false,
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _publishAssignment,
+              icon: const Icon(Icons.publish, size: 18),
+              label: const Text("PUBLISH"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF38A39D),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
           ),
         ],
       ),

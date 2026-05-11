@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'widgets/account_details_section.dart';
 import 'widgets/account_info_section.dart';
 
 class AccountDetailsPage extends StatelessWidget {
@@ -43,14 +42,6 @@ class AccountDetailsPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 40),
-            AccountDetailsSection(
-              firstName: firstName,
-              lastName: lastName,
-              role: role,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 32),
             AccountInfoSection(
               selectedLanguage: selectedLanguage,
               email: email,

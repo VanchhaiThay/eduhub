@@ -219,22 +219,22 @@ class _HomeGuestTabState extends State<HomeGuestTab> {
         _isLoadingScholarships
             ? const Center(child: CircularProgressIndicator())
             : _scholarshipList.isEmpty
-            ? _buildEmptyState(
-                _scholarshipError != null
-                    ? "Couldn't load scholarships. Tap to retry."
-                    : "No scholarship updates available. Tap to retry.",
-              )
-            : SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _scholarshipList.take(6).length,
-                  itemBuilder: (context, index) {
-                    final item = _scholarshipList[index];
-                    return _buildScholarshipCard(item, isDark);
-                  },
-                ),
-              ),
+                ? _buildEmptyState(
+                    _scholarshipError != null
+                        ? "Couldn't load scholarships. Tap to retry."
+                        : "No scholarship updates available. Tap to retry.",
+                  )
+                : SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _scholarshipList.take(6).length,
+                      itemBuilder: (context, index) {
+                        final item = _scholarshipList[index];
+                        return _buildScholarshipCard(item, isDark);
+                      },
+                    ),
+                  ),
       ],
     );
   }
@@ -250,9 +250,8 @@ class _HomeGuestTabState extends State<HomeGuestTab> {
           color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: const Color(0xFF38A39D).withOpacity(0.3)),
-          boxShadow: isDark
-              ? []
-              : [BoxShadow(color: Colors.black12, blurRadius: 5)],
+          boxShadow:
+              isDark ? [] : [BoxShadow(color: Colors.black12, blurRadius: 5)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,25 +353,25 @@ class _HomeGuestTabState extends State<HomeGuestTab> {
                 ),
               )
             : _newsList.isEmpty
-            ? _buildEmptyState(
-                _newsError != null
-                    ? "Couldn't load news. Tap to retry."
-                    : "No recent news found for Cambodia. Tap to retry.",
-              )
-            : Column(
-                children: _newsList.take(5).map((news) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildNewsTile(
-                      news['title'] ?? "No Title",
-                      news['pubDate'] ?? "Today",
-                      news['image_url'],
-                      news['link'],
-                      isDark,
-                    ),
-                  );
-                }).toList(),
-              ),
+                ? _buildEmptyState(
+                    _newsError != null
+                        ? "Couldn't load news. Tap to retry."
+                        : "No recent news found for Cambodia. Tap to retry.",
+                  )
+                : Column(
+                    children: _newsList.take(5).map((news) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildNewsTile(
+                          news['title'] ?? "No Title",
+                          news['pubDate'] ?? "Today",
+                          news['image_url'],
+                          news['link'],
+                          isDark,
+                        ),
+                      );
+                    }).toList(),
+                  ),
       ],
     );
   }

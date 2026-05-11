@@ -123,13 +123,13 @@ class LogoutButton extends StatelessWidget {
           onPressed: () => _showLogoutDialog(context),
           icon: Icon(
             Icons.logout_rounded,
-            color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+            color: isDark ? Colors.white : Colors.red.shade700,
             size: 20,
           ),
           label: Text(
             "Sign Out",
             style: TextStyle(
-              color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+              color: isDark ? Colors.white : Colors.red.shade700,
               fontWeight: FontWeight.w600,
               fontSize: 15,
               letterSpacing: -0.2,

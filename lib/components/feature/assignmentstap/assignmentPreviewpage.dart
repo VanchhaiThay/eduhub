@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
+import '../../../services/assignment_completion_service.dart';
 
 class AssignmentPreviewPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -187,30 +188,36 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
   }
 
   void _togglePreview() {
-    setState(() {
-      _isPreviewMode = !_isPreviewMode;
-    });
-
-    if (_isPreviewMode) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Preview mode: Correct answers are now visible"),
-          backgroundColor: Colors.blue,
-          duration: Duration(seconds: 2),
-        ),
-      );
+    // For teacher preview, always show answer validation dialog
+    if (widget.isTeacherPreview) {
+      _showTeacherAnswerValidation();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Preview mode disabled"),
-          backgroundColor: Colors.grey,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // For students, toggle preview mode as before
+      setState(() {
+        _isPreviewMode = !_isPreviewMode;
+      });
+
+      if (_isPreviewMode) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Preview mode: Correct answers are now visible"),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Preview mode disabled"),
+            backgroundColor: Colors.grey,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
-  void _handleSubmition(int totalQuestions) {
+  void _handleSubmition(int totalQuestions) async {
     bool allAnswered = true;
     for (int i = 0; i < totalQuestions; i++) {
       if (!_userAnswers.containsKey(i) || _userAnswers[i]!.trim().isEmpty) {
@@ -227,8 +234,246 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
         ),
       );
     } else {
+      // Mark assignment as completed
+      try {
+        final assignmentId = widget.data['id'];
+        if (assignmentId != null) {
+          await AssignmentCompletionService.markAssignmentCompleted(
+              assignmentId);
+        }
+      } catch (e) {
+        print('Error marking assignment as completed: $e');
+      }
+
       setState(() => _showResults = true);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Assignment submitted successfully!"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
+  }
+
+  void _showTeacherAnswerValidation() {
+    final List questions = widget.data['questions'] ?? [];
+    final List<Map<String, dynamic>> answerResults = [];
+
+    // Show all questions with their correct answers
+    for (int i = 0; i < questions.length; i++) {
+      final question = questions[i];
+      final String? teacherAnswer = _userAnswers[i];
+      final String? correctAnswer = question['correct_answer']?.toString();
+
+      // Always include the question, even if no answer is selected
+      final bool hasAnswer = teacherAnswer != null && teacherAnswer.isNotEmpty;
+      final bool isCorrect = hasAnswer &&
+          teacherAnswer.trim().toLowerCase() == correctAnswer?.toLowerCase();
+
+      answerResults.add({
+        'questionNumber': i + 1,
+        'questionText': question['question_text'] ?? 'Question ${i + 1}',
+        'teacherAnswer': hasAnswer ? teacherAnswer : 'No answer selected',
+        'correctAnswer': correctAnswer ?? 'No correct answer set',
+        'isCorrect': isCorrect,
+        'hasAnswer': hasAnswer,
+      });
+    }
+
+    _showAnswerValidationDialog(answerResults);
+  }
+
+  void _showAnswerValidationDialog(List<Map<String, dynamic>> results) {
+    final int answeredCount = results.where((r) => r['hasAnswer']).length;
+    final int correctCount = results.where((r) => r['isCorrect']).length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Row(
+          children: [
+            Icon(
+              correctCount == answeredCount && answeredCount > 0
+                  ? Icons.check_circle
+                  : Icons.info,
+              color: correctCount == answeredCount && answeredCount > 0
+                  ? Colors.green
+                  : Colors.orange,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Answer Validation",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                answeredCount > 0
+                    ? "You selected $correctCount out of $answeredCount answers correctly!"
+                    : "No answers selected. Showing all questions with correct answers.",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: answeredCount > 0 && correctCount == answeredCount
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Answer Details:",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: results
+                        .map((result) => _buildAnswerResultItem(result))
+                        .toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CLOSE"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Show the regular preview message after closing dialog
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("Preview mode: Correct answers are now visible"),
+                  backgroundColor: Colors.blue,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF38A39D),
+            ),
+            child: const Text(
+              "CONTINUE",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnswerResultItem(Map<String, dynamic> result) {
+    final bool isCorrect = result['isCorrect'];
+    final bool hasAnswer = result['hasAnswer'];
+    final int questionNumber = result['questionNumber'];
+    final String teacherAnswer = result['teacherAnswer'];
+    final String correctAnswer = result['correctAnswer'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: !hasAnswer
+            ? Colors.grey.withOpacity(0.1)
+            : isCorrect
+                ? Colors.green.withOpacity(0.1)
+                : Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: !hasAnswer
+              ? Colors.grey.withOpacity(0.3)
+              : isCorrect
+                  ? Colors.green.withOpacity(0.3)
+                  : Colors.red.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                !hasAnswer
+                    ? Icons.info_outline
+                    : isCorrect
+                        ? Icons.check_circle
+                        : Icons.cancel,
+                color: !hasAnswer
+                    ? Colors.grey
+                    : isCorrect
+                        ? Colors.green
+                        : Colors.red,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "Question $questionNumber",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: !hasAnswer
+                      ? Colors.grey
+                      : isCorrect
+                          ? Colors.green
+                          : Colors.red,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Your answer: $teacherAnswer",
+            style: TextStyle(
+              fontSize: 14,
+              fontStyle: hasAnswer ? FontStyle.normal : FontStyle.italic,
+              color: hasAnswer ? null : Colors.grey,
+            ),
+          ),
+          if (!hasAnswer) ...[
+            Text(
+              "Correct answer: $correctAnswer",
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue,
+              ),
+            ),
+          ] else if (!isCorrect) ...[
+            Text(
+              "Correct answer: $correctAnswer",
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -237,6 +482,11 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
     final String title = widget.data['title'] ?? 'Untitled Assignment';
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Debug logging
+    print('AssignmentPreviewPage - Data received: ${widget.data}');
+    print('AssignmentPreviewPage - Questions: $questions');
+    print('AssignmentPreviewPage - Questions length: ${questions.length}');
+
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF121212) : const Color(0xFFF0EBF8),
@@ -244,32 +494,7 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
         title: Text(widget.isTeacherPreview ? "Teacher Preview" : "Assignment"),
         backgroundColor: const Color(0xFF38A39D),
         elevation: 0,
-        actions: [
-          if (widget.isTeacherPreview)
-            Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: Center(
-                child: _isPublishing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: _publishAssignment,
-                        icon: const Icon(Icons.send, size: 18),
-                        label: const Text("PUBLISH"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF38A39D),
-                        ),
-                      ),
-              ),
-            ),
-        ],
+        actions: [],
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -326,55 +551,15 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text(
-                            _isPreviewMode ? "HIDE PREVIEW" : "PREVIEW",
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 16),
+                          child: const Text(
+                            "PREVIEW",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                           ),
                         ),
                       ),
                     ],
                   )
                 else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _togglePreview(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            _isPreviewMode ? "HIDE PREVIEW" : "PREVIEW",
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _saveProgress(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            "SAVE",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                if (!_showResults && !widget.isTeacherPreview)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: SizedBox(
@@ -389,7 +574,7 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
                           ),
                         ),
                         child: const Text(
-                          "TEST SUBMISSION",
+                          "SUBMIT",
                           style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ),
@@ -488,20 +673,7 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
             ),
           const SizedBox(height: 16),
           if (type == 'Multiple Choice')
-            ...List.generate(
-              q['options'].length,
-              (i) => RadioListTile<String>(
-                title: Text(q['options'][i]),
-                value: q['options'][i],
-                // ignore: deprecated_member_use
-                groupValue: _userAnswers[index],
-                activeColor: const Color(0xFF38A39D),
-                // ignore: deprecated_member_use
-                onChanged: _showResults
-                    ? null
-                    : (v) => setState(() => _userAnswers[index] = v!),
-              ),
-            )
+            ..._buildMultipleChoiceOptions(q, index)
           else
             TextField(
               controller: _controllers.putIfAbsent(
@@ -548,6 +720,36 @@ class _AssignmentPreviewPageState extends State<AssignmentPreviewPage> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  List<Widget> _buildMultipleChoiceOptions(Map q, int index) {
+    final List<String> options = [];
+    if (q['options'] != null) {
+      if (q['options'] is List) {
+        for (var option in q['options']) {
+          if (option is String) {
+            options.add(option);
+          } else if (option is Map && option['option_text'] != null) {
+            options.add(option['option_text'].toString());
+          }
+        }
+      }
+    }
+
+    return List.generate(
+      options.length,
+      (i) => RadioListTile<String>(
+        title: Text(options[i]),
+        value: options[i],
+        // ignore: deprecated_member_use
+        groupValue: _userAnswers[index],
+        activeColor: const Color(0xFF38A39D),
+        // ignore: deprecated_member_use
+        onChanged: _showResults
+            ? null
+            : (v) => setState(() => _userAnswers[index] = v!),
       ),
     );
   }

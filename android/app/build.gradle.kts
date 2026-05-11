@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.example.eduhub"
+    namespace = "com.eduhub.app"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 
     defaultConfig {
-        applicationId = "com.example.eduhub"
+        applicationId = "com.eduhub.app"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
