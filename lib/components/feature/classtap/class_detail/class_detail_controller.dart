@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../../../utils/encryption_utils.dart';
 
 class ClassDetailController extends ChangeNotifier {
   final TextEditingController messageController = TextEditingController();
@@ -73,16 +74,31 @@ class ClassDetailController extends ChangeNotifier {
     await saveMessageToFirestore(text: text);
   }
 
-  Future<void> saveMessageToFirestore({String? text, String? imageUrl, String? audioUrl, int? audioDuration}) async {
+  Future<void> saveMessageToFirestore(
+      {String? text,
+      String? imageUrl,
+      String? audioUrl,
+      int? audioDuration}) async {
     if (uid == null) return;
     try {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final senderName = "${userDoc.data()?['firstName'] ?? ''} ${userDoc.data()?['lastName'] ?? ''}".trim();
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final senderName =
+          "${userDoc.data()?['firstName'] ?? ''} ${userDoc.data()?['lastName'] ?? ''}"
+              .trim();
 
-      await FirebaseFirestore.instance.collection('classes').doc(classId).collection('messages').add({
+      // Encrypt the message text before saving
+      final encryptedMessage =
+          text != null && text.isNotEmpty ? EncryptionUtils.encrypt(text) : "";
+
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .collection('messages')
+          .add({
         'senderId': uid,
         'senderName': senderName.isEmpty ? "User" : senderName,
-        'message': text ?? "",
+        'message': encryptedMessage,
         'imageUrl': imageUrl,
         'audioUrl': audioUrl,
         'audioDuration': audioDuration,
@@ -97,7 +113,8 @@ class ClassDetailController extends ChangeNotifier {
 
   void scrollToBottom() {
     if (scrollController.hasClients) {
-      scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      scrollController.animateTo(0.0,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     }
   }
 
@@ -119,12 +136,15 @@ class ClassDetailController extends ChangeNotifier {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setStateDialog) {
-            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+            final isDark =
+                Theme.of(dialogContext).brightness == Brightness.dark;
             final media = MediaQuery.of(dialogContext);
 
             return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxWidth: 380,
@@ -138,7 +158,8 @@ class ClassDetailController extends ChangeNotifier {
                     children: [
                       const Text(
                         'Preview Photo',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 26, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 12),
                       ClipRRect(
@@ -159,7 +180,9 @@ class ClassDetailController extends ChangeNotifier {
                         decoration: InputDecoration(
                           hintText: 'Add a message with this photo...',
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF1F3F5),
+                          fillColor: isDark
+                              ? const Color(0xFF2C2C2C)
+                              : const Color(0xFFF1F3F5),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -221,8 +244,12 @@ class ClassDetailController extends ChangeNotifier {
     try {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}_$uid.jpg';
       final path = 'chat_images/$fileName';
-      await Supabase.instance.client.storage.from('photo_message').upload(path, File(selectedImage.path));
-      final String imageUrl = Supabase.instance.client.storage.from('photo_message').getPublicUrl(path);
+      await Supabase.instance.client.storage
+          .from('photo_message')
+          .upload(path, File(selectedImage.path));
+      final String imageUrl = Supabase.instance.client.storage
+          .from('photo_message')
+          .getPublicUrl(path);
       await saveMessageToFirestore(
         imageUrl: imageUrl,
         text: caption.isEmpty ? null : caption,
@@ -250,17 +277,23 @@ class ClassDetailController extends ChangeNotifier {
         notifyListeners();
 
         final fileName = '${DateTime.now().millisecondsSinceEpoch}_$uid.m4a';
-        await Supabase.instance.client.storage.from('photo_message').upload('chat_audio/$fileName', File(path));
-        final url = Supabase.instance.client.storage.from('photo_message').getPublicUrl('chat_audio/$fileName');
+        await Supabase.instance.client.storage
+            .from('photo_message')
+            .upload('chat_audio/$fileName', File(path));
+        final url = Supabase.instance.client.storage
+            .from('photo_message')
+            .getPublicUrl('chat_audio/$fileName');
 
-        await saveMessageToFirestore(audioUrl: url, audioDuration: finalDuration);
+        await saveMessageToFirestore(
+            audioUrl: url, audioDuration: finalDuration);
         isUploading = false;
         notifyListeners();
       }
     } else {
       if (await audioRecorder.hasPermission()) {
         final dir = await getApplicationDocumentsDirectory();
-        final path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        final path =
+            '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
         await audioRecorder.start(const RecordConfig(), path: path);
         startTimer();
         isRecording = true;
@@ -272,12 +305,14 @@ class ClassDetailController extends ChangeNotifier {
   // ================= EDIT/DELETE LOGIC =================
 
   Future<void> updateMessage(String messageId, String newText) async {
+    // Encrypt the updated message text
+    final encryptedMessage = EncryptionUtils.encrypt(newText);
     await FirebaseFirestore.instance
         .collection('classes')
         .doc(classId)
         .collection('messages')
         .doc(messageId)
-        .update({'message': newText, 'isEdited': true});
+        .update({'message': encryptedMessage, 'isEdited': true});
   }
 
   Future<void> deleteMessage(String messageId) async {

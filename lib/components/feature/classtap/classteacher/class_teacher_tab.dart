@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eduhub/components/feature/classtap/class_detail/class_detail_page.dart';
@@ -46,11 +47,11 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
           .doc(uid)
           .collection("classes")
           .add({
-            "className": name,
-            "joinCode": joinCode,
-            "createdAt": FieldValue.serverTimestamp(),
-            "studentCount": 0,
-          });
+        "className": name,
+        "joinCode": joinCode,
+        "createdAt": FieldValue.serverTimestamp(),
+        "studentCount": 0,
+      });
 
       await FirebaseFirestore.instance
           .collection("class_lookup")
@@ -86,6 +87,84 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     }
   }
 
+  Future<void> editClassName(
+      String classId, String currentName, String joinCode) async {
+    final editController = TextEditingController(text: currentName);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text(
+          "Edit Class Name",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: editController,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: "Class Name",
+            hintText: "e.g. Science 101",
+            filled: true,
+            fillColor:
+                isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: brandColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () async {
+              final newName = editController.text.trim();
+              if (newName.isEmpty) {
+                _showStatus("Please enter a class name", isError: true);
+                return;
+              }
+
+              Navigator.pop(context);
+
+              try {
+                // Update class name in user's classes collection
+                await FirebaseFirestore.instance
+                    .collection("users")
+                    .doc(uid)
+                    .collection("classes")
+                    .doc(classId)
+                    .update({"className": newName});
+
+                // Also update class name in class_lookup collection for consistency
+                await FirebaseFirestore.instance
+                    .collection("class_lookup")
+                    .doc(joinCode)
+                    .update({"className": newName});
+
+                _showStatus("Class name updated successfully!");
+              } catch (e) {
+                _showStatus("Failed to update class name", isError: true);
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _generateJoinCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     return String.fromCharCodes(
@@ -107,6 +186,15 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     );
   }
 
+  Future<void> _copyClassCode(String code) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: code));
+      _showStatus("Class code copied: $code");
+    } catch (e) {
+      _showStatus("Failed to copy code", isError: true);
+    }
+  }
+
   // ================= UI COMPONENTS =================
   void showCreateDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -126,9 +214,8 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
             labelText: "Class Name",
             hintText: "e.g. Science 101",
             filled: true,
-            fillColor: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.grey[100],
+            fillColor:
+                isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -167,9 +254,8 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
     // Check if user is logged in
     if (uid == null) {
       return Scaffold(
-        backgroundColor: isDark
-            ? const Color(0xFF111315)
-            : const Color(0xFFF3F5F7),
+        backgroundColor:
+            isDark ? const Color(0xFF111315) : const Color(0xFFF3F5F7),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -290,9 +376,9 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
               final filteredDocs = docs.where((doc) {
                 final className =
                     (doc.data() as Map<String, dynamic>)['className']
-                        ?.toString()
-                        .toLowerCase() ??
-                    "";
+                            ?.toString()
+                            .toLowerCase() ??
+                        "";
                 return className.contains(searchQuery);
               }).toList();
 
@@ -423,7 +509,7 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.tag_rounded, size: 14, color: brandColor),
+                          // Icon(Icons.tag_rounded, size: 14, color: brandColor),
                           const SizedBox(width: 4),
                           Text(
                             code,
@@ -434,6 +520,15 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
                               letterSpacing: 1,
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _copyClassCode(code),
+                            child: Icon(
+                              Icons.copy_rounded,
+                              size: 16,
+                              color: brandColor.withOpacity(0.7),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -441,8 +536,13 @@ class _ClassTeacherTabState extends State<ClassTeacherTab> {
                 ),
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert_rounded, color: subTextColor),
-                  onSelected: (val) =>
-                      val == 'delete' ? deleteClass(doc.id, code) : null,
+                  onSelected: (val) {
+                    if (val == 'edit') {
+                      editClassName(doc.id, name, code);
+                    } else if (val == 'delete') {
+                      deleteClass(doc.id, code);
+                    }
+                  },
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

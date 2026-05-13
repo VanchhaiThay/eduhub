@@ -17,9 +17,8 @@ class HomeNotificationService {
       return {'error': 'Error loading user data'};
     }
 
-    final userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid);
+    final userRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
     final doc = await userRef.get();
 
     if (doc.exists) {

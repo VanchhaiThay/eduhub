@@ -101,9 +101,8 @@ class AccountInfoSection extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade500,
+                      color:
+                          isDark ? Colors.grey.shade400 : Colors.grey.shade500,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),

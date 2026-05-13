@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../class_detail_constants.dart';
 import 'message_bubble.dart';
 import 'audio_player_widget.dart';
+import '../../../../../utils/encryption_utils.dart';
 
 class MessageListView extends StatefulWidget {
   final String classId;
@@ -171,13 +172,19 @@ class _MessageListViewState extends State<MessageListView> {
                               },
                             )
                           : null,
-                      onLongPress: () => widget.onMessageAction(
-                        doc.id,
-                        data['message'] ?? "",
-                        isMe,
-                        data['imageUrl'] != null,
-                        data['imageUrl']?.toString(),
-                      ),
+                      onLongPress: () {
+                        // Decrypt message text before passing to action sheet
+                        final rawMessage = data['message']?.toString() ?? "";
+                        final decryptedMessage =
+                            EncryptionUtils.decrypt(rawMessage);
+                        widget.onMessageAction(
+                          doc.id,
+                          decryptedMessage,
+                          isMe,
+                          data['imageUrl'] != null,
+                          data['imageUrl']?.toString(),
+                        );
+                      },
                     ),
                   ],
                 );

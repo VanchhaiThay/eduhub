@@ -17,6 +17,7 @@ import 'components/feature/profile/customer_service/customer_service_page.dart';
 import 'auth/signin.dart';
 import 'auth/signup.dart';
 import 'services/time_tracker_service.dart';
+
 // Local notifications plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();

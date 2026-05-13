@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'class_detail_constants.dart';
 import 'class_detail_controller.dart';
+import 'class_profile_page.dart';
 import 'widgets/message_list_view.dart';
 import 'widgets/message_input_bar.dart';
 import 'widgets/message_action_sheet.dart';
@@ -70,7 +71,7 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
           children: [
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: Container(color: Colors.black.withOpacity(0.9)),
+              child: Container(color: Colors.black.withValues(alpha: 0.9)),
             ),
             Center(child: InteractiveViewer(child: Image.network(imageUrl))),
             Positioned(
@@ -101,9 +102,12 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
         title: const Text("Edit Message"),
         content: TextField(controller: controller, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: ClassDetailConstants.brandColor),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: ClassDetailConstants.brandColor),
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: const Text("Save", style: TextStyle(color: Colors.white)),
           ),
@@ -123,13 +127,16 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
         title: const Text("Delete Message?"),
         content: const Text("This cannot be undone."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
           TextButton(
             onPressed: () async {
               await _controller.deleteMessage(messageId);
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.redAccent)),
+            child:
+                const Text("Delete", style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -141,28 +148,47 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? ClassDetailConstants.darkBackground : ClassDetailConstants.lightBackground,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: isDark ? ClassDetailConstants.darkSurface : Colors.white,
-        surfaceTintColor: Colors.transparent,
-        centerTitle: false,
-        title: Text(
-          widget.className,
-          style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF1D2228),
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+      backgroundColor: isDark
+          ? ClassDetailConstants.darkBackground
+          : ClassDetailConstants.lightBackground,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ClassProfilePage(
+                  className: widget.className,
+                  classId: widget.classId,
+                ),
+              ),
+            );
+          },
+          child: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor:
+                isDark ? ClassDetailConstants.darkSurface : Colors.white,
+            surfaceTintColor: Colors.transparent,
+            centerTitle: false,
+            title: Text(
+              widget.className,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1D2228),
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: isDark ? Colors.white : const Color(0xFF1D2228),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: isDark ? Colors.white : const Color(0xFF1D2228),
-          ),
-          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Column(
@@ -171,7 +197,9 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
             listenable: _controller,
             builder: (context, _) {
               if (_controller.isUploading) {
-                return const LinearProgressIndicator(color: ClassDetailConstants.brandColor, backgroundColor: Colors.transparent);
+                return const LinearProgressIndicator(
+                    color: ClassDetailConstants.brandColor,
+                    backgroundColor: Colors.transparent);
               }
               return const SizedBox.shrink();
             },
@@ -199,7 +227,8 @@ class _ClassDetailPageState extends State<ClassDetailPage> {
                 controller: _controller.messageController,
                 isRecording: _controller.isRecording,
                 recordDuration: _controller.recordDuration,
-                formattedDuration: _controller.formatDuration(_controller.recordDuration),
+                formattedDuration:
+                    _controller.formatDuration(_controller.recordDuration),
                 isDark: isDark,
                 onPickImage: _controller.pickAndUploadImage,
                 onRecordToggle: _controller.handleAudioRecording,

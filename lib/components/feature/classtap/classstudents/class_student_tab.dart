@@ -137,9 +137,8 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
     // Check if user is logged in
     if (uid == null) {
       return Scaffold(
-        backgroundColor: isDark
-            ? const Color(0xFF111315)
-            : const Color(0xFFF3F5F7),
+        backgroundColor:
+            isDark ? const Color(0xFF111315) : const Color(0xFFF3F5F7),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -191,9 +190,8 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
     }
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF111315)
-          : const Color(0xFFF3F5F7),
+      backgroundColor:
+          isDark ? const Color(0xFF111315) : const Color(0xFFF3F5F7),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showJoinDialog,
         elevation: 0,
@@ -331,9 +329,8 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 17,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF1E2328),
+                            color:
+                                isDark ? Colors.white : const Color(0xFF1E2328),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -441,9 +438,8 @@ class _ClassStudentTabState extends State<ClassStudentTab> {
               decoration: InputDecoration(
                 counterText: "",
                 filled: true,
-                fillColor: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey[100],
+                fillColor:
+                    isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,

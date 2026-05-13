@@ -134,28 +134,29 @@ class _HomePageState extends State<HomePage> {
               onLearnMore: () => setState(() => _selectedIndex = 1),
             )
           : role == null
-          ? HomeGuestTab(
-              language: selectedLanguage,
-              onLearnMore: () => setState(() => _selectedIndex = 1),
-            )
-          : HomeStudentTab(
-              language: selectedLanguage,
-              onLearnMore: () => setState(() => _selectedIndex = 1),
-            ),
+              ? HomeGuestTab(
+                  language: selectedLanguage,
+                  onLearnMore: () => setState(() => _selectedIndex = 1),
+                )
+              : HomeStudentTab(
+                  language: selectedLanguage,
+                  onLearnMore: () => setState(() => _selectedIndex = 1),
+                ),
       CourseTab(selectedLanguage: selectedLanguage),
       role == 'teacher'
           ? ClassTeacherTab(language: selectedLanguage)
           : role == null
-          ? ClassAuthPrompt(selectedLanguage: selectedLanguage, isDark: isDark)
-          : ClassStudentTab(language: selectedLanguage),
+              ? ClassAuthPrompt(
+                  selectedLanguage: selectedLanguage, isDark: isDark)
+              : ClassStudentTab(language: selectedLanguage),
       role == 'teacher'
           ? AssignmentTeacherTab(language: selectedLanguage)
           : role == null
-          ? AssignmentAuthPrompt(
-              selectedLanguage: selectedLanguage,
-              isDark: isDark,
-            )
-          : AssignmentStudentTab(language: selectedLanguage),
+              ? AssignmentAuthPrompt(
+                  selectedLanguage: selectedLanguage,
+                  isDark: isDark,
+                )
+              : AssignmentStudentTab(language: selectedLanguage),
       ProfileTab(
         firstName: firstName,
         lastName: lastName,

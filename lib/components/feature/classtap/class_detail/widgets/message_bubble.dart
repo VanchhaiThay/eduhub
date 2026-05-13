@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../class_detail_constants.dart';
+import '../../../../../utils/encryption_utils.dart';
 
 class MessageBubble extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -31,9 +32,8 @@ class MessageBubble extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Column(
-          crossAxisAlignment: isMe
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             if (!isMe)
               Padding(
@@ -49,9 +49,8 @@ class MessageBubble extends StatelessWidget {
                 ),
               ),
             Row(
-              mainAxisAlignment: isMe
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (isMe) _buildTimeInfo(),
@@ -69,9 +68,8 @@ class MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Column(
-        crossAxisAlignment: isMe
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (isEdited)
             Text(
@@ -96,12 +94,13 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildBubbleContent(BuildContext context) {
-    final textColor = isMe
-        ? Colors.white
-        : (isDark ? Colors.white : Colors.black87);
+    final textColor =
+        isMe ? Colors.white : (isDark ? Colors.white : Colors.black87);
     final linkColor = isMe ? Colors.white : const Color(0xFF0A7EA4);
     final hasImage = data['imageUrl'] != null;
-    final messageText = data['message']?.toString() ?? '';
+    final rawMessageText = data['message']?.toString() ?? '';
+    // Decrypt the message text for display
+    final messageText = EncryptionUtils.decrypt(rawMessageText);
     final hasText = messageText.trim().isNotEmpty;
     final hasAudio = audioPlayer != null;
     final isImageOnly = hasImage && !hasText && !hasAudio;
@@ -118,8 +117,8 @@ class MessageBubble extends StatelessWidget {
     final bubbleColor = isImageOnly
         ? Colors.transparent
         : (isMe
-              ? ClassDetailConstants.brandColor
-              : (isDark ? const Color(0xFF3A3A3A) : Colors.grey.shade100));
+            ? ClassDetailConstants.brandColor
+            : (isDark ? const Color(0xFF3A3A3A) : Colors.grey.shade100));
 
     if (isImageWithCaption) {
       return _buildTelegramStyleImageCaptionBubble(
@@ -159,9 +158,8 @@ class MessageBubble extends StatelessWidget {
               onLongPress: () =>
                   _showImageActionSheet(context, data['imageUrl']),
               child: ClipRRect(
-                borderRadius: isImageOnly
-                    ? bubbleRadius
-                    : BorderRadius.circular(10),
+                borderRadius:
+                    isImageOnly ? bubbleRadius : BorderRadius.circular(10),
                 child: Image.network(
                   data['imageUrl'],
                   width: 200,
@@ -177,7 +175,7 @@ class MessageBubble extends StatelessWidget {
                         child: CircularProgressIndicator(
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
+                                  loadingProgress.expectedTotalBytes!
                               : null,
                         ),
                       ),
@@ -188,9 +186,8 @@ class MessageBubble extends StatelessWidget {
             ),
           if (hasAudio)
             Padding(
-              padding: hasImage
-                  ? const EdgeInsets.only(top: 8)
-                  : EdgeInsets.zero,
+              padding:
+                  hasImage ? const EdgeInsets.only(top: 8) : EdgeInsets.zero,
               child: audioPlayer!,
             ),
           if (hasText)
@@ -226,9 +223,8 @@ class MessageBubble extends StatelessWidget {
     final captionColor = isMe
         ? const Color(0xFF2F9E98)
         : (isDark ? const Color(0xFF3A3A3A) : Colors.white);
-    final textColor = isMe
-        ? Colors.white
-        : (isDark ? Colors.white : Colors.black87);
+    final textColor =
+        isMe ? Colors.white : (isDark ? Colors.white : Colors.black87);
     final linkColor = isMe ? Colors.white : const Color(0xFF0A7EA4);
 
     return Container(

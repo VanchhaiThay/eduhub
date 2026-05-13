@@ -31,9 +31,13 @@ class _WelcomePageState extends State<WelcomePage> {
 
     return Scaffold(
       // Toggle background: Yellow for Light, Deep Grey/Black for Dark
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFFFED811),
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFFED811),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -45,9 +49,8 @@ class _WelcomePageState extends State<WelcomePage> {
               height: 160,
               decoration: BoxDecoration(
                 // We keep the Teal brand color, or dim it slightly for dark mode
-                color: isDark
-                    ? const Color(0xFF269A94)
-                    : const Color(0xFF2CB5AE),
+                color:
+                    isDark ? const Color(0xFF269A94) : const Color(0xFF2CB5AE),
                 shape: BoxShape.circle,
                 boxShadow: isDark
                     ? [
@@ -83,9 +86,8 @@ class _WelcomePageState extends State<WelcomePage> {
               "Hub for Students & Teachers",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isDark
-                    ? Colors.white70
-                    : Colors.black87, // Subtle contrast
+                color:
+                    isDark ? Colors.white70 : Colors.black87, // Subtle contrast
               ),
             ),
 
